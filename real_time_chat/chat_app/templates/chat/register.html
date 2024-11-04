@@ -1,47 +1,4 @@
-{% comment %} <!-- templates/chat/register.html -->
-<form id="register-form">
-    {% csrf_token %}
-    <input type="text" name="username" placeholder="Username" required><br>
-    <input type="email" name="email" placeholder="Email" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <input type="password" name="password2" placeholder="Confirm Password" required><br>
-    <button type="submit">Register</button>
-</form>
 
-<!-- Login button -->
-<button id="login-button" onclick="window.location.href='{% url 'login_page' %}'">Login</button>
-
-<script>
-document.getElementById('register-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the form from submitting the traditional way
-
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const formData = {
-        username: document.querySelector('input[name="username"]').value,
-        email: document.querySelector('input[name="email"]').value,
-        password: document.querySelector('input[name="password"]').value,
-        password2: document.querySelector('input[name="password2"]').value
-    };
-
-    fetch("{% url 'register_page' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify(formData),
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            alert(data.message);  // Display success message
-            window.location.href = "{% url 'login_page' %}";
-        } else {
-            alert(JSON.stringify(data));  // Display errors if any
-        }
-    });
-});
-</script> {% endcomment %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -231,7 +188,7 @@ document.getElementById('register-form').addEventListener('submit', function(eve
             text-decoration: underline;
         }
 
-        /* Password strength indicator */
+      
         .password-strength {
             height: 4px;
             background: #242629;
@@ -256,37 +213,37 @@ document.getElementById('register-form').addEventListener('submit', function(eve
             }
         }
         .lock-icon {
-            position: absolute; /* Use absolute positioning */
-            top: 30px; /* Adjust this value to move the icon up */
-            left: 15px; /* Adjust this value to move the icon horizontally */
-            color: #888; /* Change color if needed */
+            position: absolute; 
+            top: 30px; 
+            left: 15px; 
+            color: #888; 
         }
         .password-requirements {
-            margin-top: 5px; /* Space above requirements */
+            margin-top: 5px; 
         }
         
         .requirement {
-            color: red; /* Red text for unmet requirements */
-            display: block; /* Ensure it is visible */
-            font-size: 14px; /* Base font size */
+            color: red; 
+            display: block; 
+            font-size: 14px; 
         }
         
         .requirement.valid {
-            color: green; /* Change to green when requirement is met */
-            font-size: 12px; /* Reduced font size for valid requirement */
+            color: green; 
+            font-size: 12px;
         }
         h1 {
-            font-size: 2.5rem; /* Adjust the font size as needed */
-            color: #DDDDDD ; /* Change the color to match your theme */
-            text-align: center; /* Center the headline */
-            margin-bottom: 10px; /* Space between headlines */
+            font-size: 2.5rem;
+            color: #DDDDDD ; 
+            text-align: center; 
+            margin-bottom: 10px; 
         }
         
         h4 {
-            font-size: 1.2rem; /* Smaller font size */
+            font-size: 1.2rem; 
             color: var(--text-light);
-            text-align: center; /* Center the subheading */
-            margin-bottom: 20px; /* Space below the subheading */
+            text-align: center; 
+            margin-bottom: 20px;
         }
         
     </style>
@@ -321,19 +278,7 @@ document.getElementById('register-form').addEventListener('submit', function(eve
                         <input type="email" class="form-control" name="email" placeholder="Email" required>
                     </div>
 
-                    {% comment %} <div class="form-group">
-                        <i class="fas fa-lock input-icon lock-icon"></i>
-                        <input type="password" class="form-control" name="password" placeholder="Password" required>
-                         <div class="password-strength">
-                            <div class="strength-meter"></div>
-                        </div> 
-                        <div class="password-requirements">
-                            <p class="requirement" id="uppercase" style="display: ;">Must contain at least one uppercase letter</p>
-                            <p class="requirement" id="number" style="display: none;">Must contain at least one number</p>
-                            <p class="requirement" id="special" style="display: none;">Must contain at least one special character</p>
-                        </div>
-                        
-                    </div> {% endcomment %}
+                   
                     <div class="form-group">
                         <i class="fas fa-lock input-icon lock-icon"></i>
                         <input type="password" class="form-control" name="password" placeholder="Password" required>
@@ -372,21 +317,20 @@ document.getElementById('register-form').addEventListener('submit', function(eve
             const password = e.target.value;
             const strengthMeter = document.querySelector('.strength-meter');
             
-            // Password requirement checks
+
             const hasUpper = /[A-Z]/.test(password);
             const hasNumber = /\d/.test(password);
             const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
             const lengthValid = password.length >= 8;
-        
-            // Update strength meter
+       
             const strength = [/[a-z]/.test(password), hasUpper, hasNumber, hasSpecial, lengthValid].filter(Boolean).length;
         
-            strengthMeter.className = 'strength-meter'; // Reset class
+            strengthMeter.className = 'strength-meter'; 
             if (strength < 3) strengthMeter.classList.add('weak');
             else if (strength < 4) strengthMeter.classList.add('medium');
             else strengthMeter.classList.add('strong');
         
-         // Update requirement indicators
+        
             document.getElementById('uppercase').classList.toggle('valid', hasUpper);
             document.getElementById('number').classList.toggle('valid', hasNumber);
             document.getElementById('special').classList.toggle('valid', hasSpecial);
@@ -395,7 +339,7 @@ document.getElementById('register-form').addEventListener('submit', function(eve
 
         });
         
-        // Form submission
+  
         document.getElementById('register-form').addEventListener('submit', function(event) {
             event.preventDefault();
         
@@ -407,7 +351,6 @@ document.getElementById('register-form').addEventListener('submit', function(eve
                 password2: document.querySelector('input[name="password2"]').value
             };
         
-            // Password match validation
             if (formData.password !== formData.password2) {
                 showToast('Passwords do not match', 'error');
                 return;

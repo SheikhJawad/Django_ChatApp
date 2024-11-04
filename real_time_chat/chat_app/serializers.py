@@ -16,13 +16,6 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         model = ChatRoom
         fields = ['id', 'name', 'participants', 'messages', 'created_at']
         
-# chat/serializers.py
-# chat/serializers.
-
-# serializers.py
-from django.contrib.auth import authenticate
-from rest_framework import serializers
-from django.contrib.auth.models import User
 
 class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True)
