@@ -1,0 +1,353 @@
+{% comment %} <!-- templates/chat/login.html -->
+<form id="login-form">
+    {% csrf_token %}
+    <input type="text" name="username" placeholder="Username" required><br>
+    <input type="password" name="password" placeholder="Password" required><br>
+    <button type="submit">Login</button>
+</form>
+
+<!-- Register Button -->
+<p>Don't have an account? <a href="{% url 'register_page' %}">Register here</a></p>
+
+<script>
+document.getElementById('login-form').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent the form from submitting the traditional way
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const formData = {
+        username: document.querySelector('input[name="username"]').value,
+        password: document.querySelector('input[name="password"]').value
+    };
+
+    fetch("{% url 'login_view' %}", {  // Use the correct URL for the login API
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(formData),
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.detail || "Login failed.");  // Handle error response
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert("Login successful!"); // Alert the user about successful login
+        window.location.href = "{% url 'chat_home' %}"; // Redirect to chat home
+    })
+    .catch(error => {
+        alert("Error: " + error.message); // Show the error message
+    });
+});
+</script> {% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7F5AF0;
+            --bg-dark: #16161A;
+            --text-light: #FFFFFE;
+            --paragraph: #94A1B2;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .split-layout {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .left-side {
+            flex: 1;
+            background: linear-gradient(45deg, #7F5AF0, #2CB67D);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-side::before {
+            content: '';
+            position: absolute;
+            width: 1000px;
+            height: 1000px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -20%;
+            left: -20%;
+        }
+
+        .left-side::after {
+            content: '';
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            bottom: -20%;
+            right: -20%;
+        }
+
+        .brand-message {
+            color: var(--text-light);
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .brand-message h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .brand-message p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .right-side {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-form-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .login-header {
+            margin-bottom: 2.5rem;
+            text-align: left;
+        }
+
+        .login-header h2 {
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: var(--paragraph);
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-control {
+            background-color: transparent;
+            border: 2px solid #242629;
+            border-radius: 12px;
+            padding: 1rem 1rem 1rem 3rem;
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            background-color: transparent;
+            box-shadow: none;
+            color: var(--text-light);
+        }
+
+        .form-control::placeholder {
+            color: var(--paragraph);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--paragraph);
+            font-size: 1.2rem;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            background-color: var(--primary);
+            border: none;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            background-color: #6B4CC9;
+            transform: translateY(-2px);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--paragraph);
+        }
+
+        .register-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Toast Styling */
+        .toast {
+            background-color: #242629;
+            border: none;
+        }
+
+        .toast-success {
+            border-left: 4px solid #2CB67D;
+        }
+
+        .toast-error {
+            border-left: 4px solid #EF4444;
+        }
+
+        .btn-close-white:focus {
+            box-shadow: none;
+        }
+
+        @media (max-width: 768px) {
+            .left-side {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="split-layout">
+        <!-- Left Side - Branding -->
+        <div class="left-side">
+            <div class="brand-message">
+                <h1>Welcome Back</h1>
+                <p>Your journey continues here</p>
+            </div>
+        </div>
+
+        <!-- Right Side - Login Form -->
+        <div class="right-side">
+            <div class="login-form-container">
+                <div class="login-header">
+                    <h2>Sign In</h2>
+                    <p>Please login to your account</p>
+                </div>
+
+                <form id="login-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" class="form-control" name="username" placeholder="Username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" class="form-control" name="password" placeholder="Password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-login">
+                        Sign In
+                    </button>
+                </form>
+
+                <div class="register-link">
+                    <p>Don't have an account? <a href="{% url 'register_page' %}">Sign up</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.getElementById('login-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const formData = {
+            username: document.querySelector('input[name="username"]').value,
+            password: document.querySelector('input[name="password"]').value
+        };
+
+        fetch("{% url 'login_view' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify(formData),
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.detail || "Login failed.");
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            showToast('Success! Redirecting...', 'success');
+            setTimeout(() => {
+                window.location.href = "{% url 'chat_home' %}";
+            }, 1500);
+        })
+        .catch(error => {
+            showToast(error.message, 'error');
+        });
+    });
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '11';
+        toast.innerHTML = `
+            <div class="toast toast-${type} align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const toastElement = new bootstrap.Toast(toast.querySelector('.toast'));
+        toastElement.show();
+    }
+    </script>
+</body>
+</html>

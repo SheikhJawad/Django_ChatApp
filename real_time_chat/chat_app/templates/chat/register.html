@@ -1,0 +1,464 @@
+{% comment %} <!-- templates/chat/register.html -->
+<form id="register-form">
+    {% csrf_token %}
+    <input type="text" name="username" placeholder="Username" required><br>
+    <input type="email" name="email" placeholder="Email" required><br>
+    <input type="password" name="password" placeholder="Password" required><br>
+    <input type="password" name="password2" placeholder="Confirm Password" required><br>
+    <button type="submit">Register</button>
+</form>
+
+<!-- Login button -->
+<button id="login-button" onclick="window.location.href='{% url 'login_page' %}'">Login</button>
+
+<script>
+document.getElementById('register-form').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent the form from submitting the traditional way
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const formData = {
+        username: document.querySelector('input[name="username"]').value,
+        email: document.querySelector('input[name="email"]').value,
+        password: document.querySelector('input[name="password"]').value,
+        password2: document.querySelector('input[name="password2"]').value
+    };
+
+    fetch("{% url 'register_page' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(formData),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert(data.message);  // Display success message
+            window.location.href = "{% url 'login_page' %}";
+        } else {
+            alert(JSON.stringify(data));  // Display errors if any
+        }
+    });
+});
+</script> {% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7F5AF0;
+            --bg-dark: #16161A;
+            --text-light: #FFFFFE; /* Consider using this for light text */
+            --paragraph: #94A1B2; /* Keep this for softer paragraph text */
+            
+            --text-bright-cyan: #00BFFF;
+            --text-coral: #FF6F61;
+            --text-lime-green: #32CD32;
+            --text-sunny-yellow: #FFD700;
+            --text-hot-pink: #FF1493;
+            --text-light-orange: #FFA500;
+            --text-electric-purple: #BF00FF;
+            --text-bright-white: #FFFFFF; /* Use for maximum contrast */
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .split-layout {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .left-side {
+            flex: 1;
+            background: linear-gradient(45deg, #7F5AF0, #2CB67D);
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-side::before {
+            content: '';
+            position: absolute;
+            width: 1000px;
+            height: 1000px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            top: -20%;
+            left: -20%;
+        }
+
+        .left-side::after {
+            content: '';
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            bottom: -20%;
+            right: -20%;
+        }
+
+        .brand-message {
+            color: var(--text-light);
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .brand-message h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .brand-message p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .right-side {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .register-form-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+        }
+
+        .register-header {
+            margin-bottom: 2.5rem;
+            text-align: left;
+        }
+
+        .register-header h2 {
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .register-header p {
+            color: var(--paragraph);
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-control {
+            background-color: transparent;
+            border: 2px solid #242629;
+            border-radius: 12px;
+            padding: 1rem 1rem 1rem 3rem;
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            background-color: transparent;
+            box-shadow: none;
+            color: var(--text-light);
+        }
+
+        .form-control::placeholder {
+            color: var(--paragraph);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--paragraph);
+            font-size: 1.2rem;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            background-color: var(--primary);
+            border: none;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-register:hover {
+            background-color: #6B4CC9;
+            transform: translateY(-2px);
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--paragraph);
+        }
+
+        .login-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Password strength indicator */
+        .password-strength {
+            height: 4px;
+            background: #242629;
+            margin-top: 0.5rem;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .strength-meter {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s ease;
+        }
+
+        .weak { width: 33%; background: #EF4444; }
+        .medium { width: 66%; background: #F59E0B; }
+        .strong { width: 100%; background: #2CB67D; }
+
+        @media (max-width: 768px) {
+            .left-side {
+                display: none;
+            }
+        }
+        .lock-icon {
+            position: absolute; /* Use absolute positioning */
+            top: 30px; /* Adjust this value to move the icon up */
+            left: 15px; /* Adjust this value to move the icon horizontally */
+            color: #888; /* Change color if needed */
+        }
+        .password-requirements {
+            margin-top: 5px; /* Space above requirements */
+        }
+        
+        .requirement {
+            color: red; /* Red text for unmet requirements */
+            display: block; /* Ensure it is visible */
+            font-size: 14px; /* Base font size */
+        }
+        
+        .requirement.valid {
+            color: green; /* Change to green when requirement is met */
+            font-size: 12px; /* Reduced font size for valid requirement */
+        }
+        h1 {
+            font-size: 2.5rem; /* Adjust the font size as needed */
+            color: #DDDDDD ; /* Change the color to match your theme */
+            text-align: center; /* Center the headline */
+            margin-bottom: 10px; /* Space between headlines */
+        }
+        
+        h4 {
+            font-size: 1.2rem; /* Smaller font size */
+            color: var(--text-light);
+            text-align: center; /* Center the subheading */
+            margin-bottom: 20px; /* Space below the subheading */
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="split-layout">
+        <!-- Left Side - Branding -->
+        <div class="left-side">
+            <div class="brand-message">
+                <h1>Step into the Chat Zone Where Ideas Meet Dialogue!</h1>
+                 <h4>Join us and start your conversation adventure!</h4>
+            </div>
+        </div>
+
+        <!-- Right Side - Register Form -->
+        <div class="right-side">
+            <div class="register-form-container">
+                <div class="register-header">
+                    <h2>Create Account</h2>
+                    <p>Fill in your details to get started</p>
+                </div>
+
+                <form id="register-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" class="form-control" name="username" placeholder="Username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" class="form-control" name="email" placeholder="Email" required>
+                    </div>
+
+                    {% comment %} <div class="form-group">
+                        <i class="fas fa-lock input-icon lock-icon"></i>
+                        <input type="password" class="form-control" name="password" placeholder="Password" required>
+                         <div class="password-strength">
+                            <div class="strength-meter"></div>
+                        </div> 
+                        <div class="password-requirements">
+                            <p class="requirement" id="uppercase" style="display: ;">Must contain at least one uppercase letter</p>
+                            <p class="requirement" id="number" style="display: none;">Must contain at least one number</p>
+                            <p class="requirement" id="special" style="display: none;">Must contain at least one special character</p>
+                        </div>
+                        
+                    </div> {% endcomment %}
+                    <div class="form-group">
+                        <i class="fas fa-lock input-icon lock-icon"></i>
+                        <input type="password" class="form-control" name="password" placeholder="Password" required>
+                        <div class="password-strength">
+                            <div class="strength-meter"></div>
+                        </div>
+                        <div class="password-requirements">
+                            <p class="requirement" id="uppercase">Must contain at least one uppercase letter</p>
+                            <p class="requirement" id="number">Must contain at least one number</p>
+                            <p class="requirement" id="special">Must contain at least one special character</p>
+                        </div>
+                    </div>
+                    
+                    
+                  
+                    <div class="form-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" class="form-control" name="password2" placeholder="Confirm Password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-register">
+                        Create Account
+                    </button>
+                </form>
+
+                <div class="login-link">
+                    <p>Already have an account? <a href="{% url 'login_page' %}">Sign in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelector('input[name="password"]').addEventListener('input', function (e) {
+            const password = e.target.value;
+            const strengthMeter = document.querySelector('.strength-meter');
+            
+            // Password requirement checks
+            const hasUpper = /[A-Z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+            const lengthValid = password.length >= 8;
+        
+            // Update strength meter
+            const strength = [/[a-z]/.test(password), hasUpper, hasNumber, hasSpecial, lengthValid].filter(Boolean).length;
+        
+            strengthMeter.className = 'strength-meter'; // Reset class
+            if (strength < 3) strengthMeter.classList.add('weak');
+            else if (strength < 4) strengthMeter.classList.add('medium');
+            else strengthMeter.classList.add('strong');
+        
+         // Update requirement indicators
+            document.getElementById('uppercase').classList.toggle('valid', hasUpper);
+            document.getElementById('number').classList.toggle('valid', hasNumber);
+            document.getElementById('special').classList.toggle('valid', hasSpecial);
+
+
+
+        });
+        
+        // Form submission
+        document.getElementById('register-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+        
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const formData = {
+                username: document.querySelector('input[name="username"]').value,
+                email: document.querySelector('input[name="email"]').value,
+                password: document.querySelector('input[name="password"]').value,
+                password2: document.querySelector('input[name="password2"]').value
+            };
+        
+            // Password match validation
+            if (formData.password !== formData.password2) {
+                showToast('Passwords do not match', 'error');
+                return;
+            }
+        
+            fetch("{% url 'register_view' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    showToast('Registration successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = "{% url 'login_page' %}";
+                    }, 1500);
+                } else {
+                    showToast(JSON.stringify(data), 'error');
+                }
+            })
+            .catch(error => {
+                showToast('An error occurred. Please try again.', 'error');
+            });
+        });
+        
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed top-0 end-0 p-3';
+            toast.style.zIndex = '11';
+            toast.innerHTML = `
+                <div class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" 
+                     style="background-color: ${type === 'success' ? '#2CB67D' : '#EF4444'}">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            const toastElement = new bootstrap.Toast(toast.querySelector('.toast'));
+            toastElement.show();
+        }
+        
+    </script>
+    
+</body>
+</html>
