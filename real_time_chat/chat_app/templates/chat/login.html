@@ -1,49 +1,4 @@
-{% comment %} <!-- templates/chat/login.html -->
-<form id="login-form">
-    {% csrf_token %}
-    <input type="text" name="username" placeholder="Username" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <button type="submit">Login</button>
-</form>
 
-<!-- Register Button -->
-<p>Don't have an account? <a href="{% url 'register_page' %}">Register here</a></p>
-
-<script>
-document.getElementById('login-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the form from submitting the traditional way
-
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const formData = {
-        username: document.querySelector('input[name="username"]').value,
-        password: document.querySelector('input[name="password"]').value
-    };
-
-    fetch("{% url 'login_view' %}", {  // Use the correct URL for the login API
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify(formData),
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw new Error(data.detail || "Login failed.");  // Handle error response
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        alert("Login successful!"); // Alert the user about successful login
-        window.location.href = "{% url 'chat_home' %}"; // Redirect to chat home
-    })
-    .catch(error => {
-        alert("Error: " + error.message); // Show the error message
-    });
-});
-</script> {% endcomment %}
 <!DOCTYPE html>
 <html lang="en">
 <head>

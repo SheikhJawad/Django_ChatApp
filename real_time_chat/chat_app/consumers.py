@@ -1,5 +1,3 @@
-
-
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 from .models import ChatRoom, Message
@@ -131,18 +129,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             current_messages.pop(0)  
         current_messages.append(message)
         cache.set(self.room_group_name, current_messages)
-
-
-# from channels.generic.websocket import AsyncWebsocketConsumer
-# import json
-# from asgiref.sync import sync_to_async
-# from django.core.cache import cache
-# from django.utils import timezone
-# from django.db import models
-# from django.contrib.auth import get_user_model
-# from .models import PrivateMessage
-
-# User = get_user_model()
 
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     async def connect(self):

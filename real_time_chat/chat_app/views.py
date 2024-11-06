@@ -1,5 +1,6 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from .models import *
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -72,30 +73,24 @@ from django.shortcuts import render, get_object_or_404
 from .models import User, PrivateMessage  
 
 def user_list_view(request):
-    users = User.objects.exclude(id=request.user.id)  # Exclude the logged-in user
+    users = User.objects.exclude(id=request.user.id)  
     return render(request, "dm.html", {"users": users, "selected_user": None})
 
 
 
 
 def is_user_online(user_id):
-    """Check if the user is online based on cache."""
+    """Check if the user is online based on cache the cache is comming from
+    Redis."""
     return cache.get(f'user_status_{user_id}', False)
 
 def direct_message_view(request, user_id=None):
-    """
-    Handle both the DM index and individual conversations.
-    If user_id is None, show the user list with no selected conversation.
-    If user_id is provided, show the conversation with that user.
-    """
-    # Get all users except the logged-in user
     users = User.objects.exclude(id=request.user.id)  
-    
-    # Prepare a list of online users
+  
     online_users = [user.id for user in users if is_user_online(user.id)]
 
     if user_id is None:
-        # No user selected - just show the user list
+   
         return render(request, "chat/dm.html", {
             'messages': None,
             'selected_user': None,
@@ -103,10 +98,10 @@ def direct_message_view(request, user_id=None):
             'online_users': online_users,
         })
     
-    # Get the selected user and their messages
+
     receiver = get_object_or_404(User, id=user_id)
     
-    # Get messages between current user and receiver
+
     messages = PrivateMessage.objects.filter(
         Q(sender=request.user, receiver=receiver) |
         Q(sender=receiver, receiver=request.user)
@@ -118,3 +113,7 @@ def direct_message_view(request, user_id=None):
         'users': users,
         'online_users': online_users,
     })
+def get_user_status(request, user_id):
+  
+    status = cache.get(f'user_status_{user_id}', 'offline')
+    return JsonResponse({'status': status})
