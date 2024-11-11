@@ -579,6 +579,12 @@
 
     <!-- Include Bootstrap Icons CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+
+        <!-- Other head content -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+ 
+    
     <style>
         .bg-dark-brown {
             background-color: #333333;
@@ -587,6 +593,7 @@
         .bg-creamy-white {
             background-color: #F5F5DC;
         }
+        
 
         .chat-container {
             height: calc(100vh - 2rem);
@@ -661,7 +668,9 @@
         .read-tick {
             color: #10B981;
         }
-
+       #clear-button{
+        display: content;
+       }
         /* Mobile-specific styles */
         @media (max-width: 768px) {
             #sidebar {
@@ -723,7 +732,7 @@
 
                 <!-- Search bar -->
                 <div class="p-4 border-b">
-                    <div class="relative">
+                    <div class="relative d-flex align-items-center justify-content-between">
                         <input 
                             type="text" 
                             id="search-input" 
@@ -734,51 +743,61 @@
                         <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
-            
-                        <!-- Clear Button (cross button using Bootstrap Icon) -->
+                    
+                        <!-- Clear Button (cross button using Font Awesome Icon) -->
                         <button 
                             id="clear-button" 
                             onclick="clearSearchInput()" 
-                            class="absolute right-3 top-2.5 h-5 w-5 text-black opacity-0 hover:opacity-100 transition-opacity duration-200" 
-                            style="display: none;" 
+                            class="absolute right-3 top-2.5 h-5 w-5" 
+                            style="display: none;"
                         >
-                            <!-- Bootstrap Icon Cross (set the color to black) -->
-                            <i class="bi bi-x text-black"></i>
+                            <i class="fas fa-user"></i>
                         </button>
                     </div>
                 </div>
-            
+                
                 <script>
                     const sidebar = document.getElementById('sidebar');
                     const sidebarTitle = document.getElementById('sidebar-title');
-                
+                    const searchInput = document.getElementById('search-input');
+                    const clearButton = document.getElementById('clear-button');
+                    
                     function clearSearchInput() {
-          
-                        document.getElementById('search-input').value = '';
-                 
-                        document.getElementById('clear-button').style.display = 'none';
-                
-                       
+                        // Clear the search input field
+                        searchInput.value = '';
+                    
+                        // Hide the clear button
+                        clearButton.style.display = 'none';
+                    
+                        // Reset the sidebar by removing any filtered results or hidden states
+                        const userElements = document.querySelectorAll('.users-container .block');
+                        userElements.forEach(userElement => {
+                            userElement.style.display = 'block'; // Make all user elements visible again
+                        });
+                    
+                        // Update the sidebar title based on whether the user is logged in
                         sidebar.classList.remove('hidden'); 
-              
                         if ("{{ request.user.username }}" !== '') {
                             sidebarTitle.innerHTML = "{{ request.user.username }}'s Chats";  
                         } else {
                             sidebarTitle.innerHTML = "Direct Messages";  
                         }
                     }
-                
+                    
+                    
                     function toggleClearButton() {
-                        const input = document.getElementById('search-input');
-                        const clearButton = document.getElementById('clear-button');
-                      
-                        if (input.value) {
+                        // Show the button only if there is text in the search input
+                        if (searchInput.value.trim() !== '') {
                             clearButton.style.display = 'block';
                         } else {
                             clearButton.style.display = 'none';
                         }
                     }
+                    
+                    // Event listener to show/hide the button as the user types
+                    searchInput.addEventListener('input', toggleClearButton);
                 </script>
+                
                 <div class="users-container divide-y divide-gray-200 flex-1">
                     {% for user in users %}
                         <div onclick="handleUserSelect('{{ user.id }}', '{{ user.username }}')" class="cursor-pointer block hover:bg-gray-50">
@@ -817,17 +836,17 @@
                             <div class="connection-status absolute inset-0 w-full h-full rounded-full border-2 opacity-50"></div>
                         </div>
                         <div>
-                            <h3 id="selected-user-name" class="text-xl font-bold">{{ selected_user.username }}</h3>
+                            <h3 id="selected-user-name" class="text-xl font-bold"></h3>
                         </div>
                     </div>
                 </div>
-
+        
                 <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                    <div class="text-center text-gray-500 py-8">
+                    <div id="no-messages" class="text-center text-gray-500 py-8">
                         No messages yet. Start a conversation!
                     </div>
                 </div>
-
+        
                 <div class="border-t p-4 bg-white flex-shrink-0">
                     <div class="flex space-x-2 items-center">
                         <input 
@@ -840,19 +859,27 @@
                             id="emoji-button" 
                             class="bg-dark-brown text-white px-4 py-2 rounded-full hover:bg-brand-secondary transition-colors duration-300 flex items-center"
                         >
-                        <span>&#128151;</span>
-
+                            <span>&#128151;</span>
                         </button>
                         <button 
                             id="file-button" 
                             class="bg-dark-brown text-white px-4 py-2 rounded-full hover:bg-brand-secondary transition-colors duration-300 flex items-center"
+                            onclick="document.getElementById('file-input').click()"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm1 1v10h12V5H4z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1V4zm1 1v10h12V5H4z" clip-rule="evenodd" />
                             </svg>
                         </button>
+                        <input 
+                            type="file" 
+                            id="file-input" 
+                            accept="image/*,.pdf,.doc,.docx"
+                            style="display: none;" 
+                            onchange="handleFileSelect(this.files[0])"
+                        >
                         <button 
                             id="send-button" 
+                            onclick="handleSendMessage()"
                             class="bg-dark-brown text-white px-4 py-2 rounded-full hover:bg-brand-secondary transition-colors duration-300 flex items-center"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -862,6 +889,139 @@
                     </div>
                 </div>
             </div>
+        
+            <script>
+                // Configuration
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 5MB limit
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain'];
+
+// Handle file selection with validation and error handling
+function handleFileSelect(file) {
+    if (!file) {
+        console.error('No file selected');
+        alert('Please select a file to send.');
+        return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+        console.error('File too large:', file.size);
+        alert(`File size must be under ${MAX_FILE_SIZE / 1024 / 1024}MB. Current file is ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+        return;
+    }
+
+    // Validate file type
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        console.error('Invalid file type:', file.type);
+        alert(`File type not allowed. Allowed types: ${ALLOWED_FILE_TYPES.join(', ')}`);
+        return;
+    }
+
+    // Check WebSocket connection
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket not connected. Current state:', socket ? socket.readyState : 'undefined');
+        alert('Connection error. Please wait while we reconnect...');
+        initializeWebSocket();
+        return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const message = {
+                type: 'file',
+                file: {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: e.target.result
+                },
+                sender_id: currentUserId,
+                receiver_id: selectedUserId,
+                timestamp: new Date().toISOString()
+            };
+
+            // Add loading indicator
+            const loadingMessage = {
+                type: 'status',
+                content: `Sending ${file.name}...`,
+                sender_id: currentUserId,
+                timestamp: new Date().toISOString()
+            };
+            displayMessage(loadingMessage);
+
+            // Send file in chunks if it's large
+            const chunkSize = 1024 * 64; // 64KB chunks
+            const data = e.target.result;
+            let offset = 0;
+
+            function sendChunk() {
+                const chunk = data.slice(offset, offset + chunkSize);
+                const isLastChunk = offset + chunkSize >= data.length;
+
+                const chunkMessage = {
+                    type: 'file_chunk',
+                    file: {
+                        name: file.name,
+                        type: file.type,
+                        chunk: chunk,
+                        offset: offset,
+                        isLastChunk: isLastChunk
+                    },
+                    sender_id: currentUserId,
+                    receiver_id: selectedUserId,
+                    timestamp: new Date().toISOString()
+                };
+
+                socket.send(JSON.stringify(chunkMessage));
+
+                if (!isLastChunk) {
+                    offset += chunkSize;
+                    setTimeout(sendChunk, 50); // Add delay between chunks
+                } else {
+                    // File transfer complete
+                    displayMessage(message);
+                }
+            }
+
+            sendChunk();
+
+        } catch (error) {
+            console.error('Error preparing file:', error);
+            alert('Error preparing file for upload. Please try again.');
+        }
+    };
+
+    reader.onerror = function(error) {
+        console.error('Error reading file:', error);
+        alert('Error reading file. Please try again.');
+    };
+
+    try {
+        reader.readAsDataURL(file);
+    } catch (error) {
+        console.error('Error starting file read:', error);
+        alert('Error processing file. Please try again.');
+    }
+}
+
+// Add event listener for file input
+function initializeFileUpload() {
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleFileSelect(file);
+        });
+    }
+}
+
+// Initialize file upload when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeFileUpload();
+});
+            </script>
         </div>
     </div>
     <emoji-picker id="emoji-picker" style="position: absolute; bottom: 80px; right: 20px; display: none;"></emoji-picker>
@@ -1262,49 +1422,65 @@
             fileInput.style.display = 'none';
             fileInput.accept = 'image/*,.pdf,.doc,.docx';
             document.body.appendChild(fileInput);
-        
+            
             fileButton.addEventListener('click', () => fileInput.click());
-        
+            
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-        
+            
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     if (ws && selectedUserId) {
+                        if (ws.readyState === WebSocket.OPEN) {
+                            const message = {
+                                type: 'file',
+                                file: {
+                                    name: file.name,
+                                    type: file.type,
+                                    size: file.size,
+                                    data: e.target.result // Base64-encoded data
+                                },
+                                sender_id: currentUserId,
+                                receiver_id: selectedUserId,
+                                timestamp: new Date().toISOString()
+                            };
+                            ws.send(JSON.stringify(message));
+                            console.log('File sent:', file.name);
+                        } else {
+                            console.error('WebSocket is not open');
+                        }
+                    }
+                };
+            
+                reader.onerror = function(error) {
+                    console.error('Error reading file:', error);
+                };
+            
+                reader.readAsDataURL(file); // Read the file as base64
+            });
+            
+            // Send text message function
+            function sendMessage() {
+                const messageText = messageInput.value.trim();
+                if (messageText && ws && selectedUserId) {
+                    if (ws.readyState === WebSocket.OPEN) {
                         const message = {
-                            type: 'file',
-                            file: {
-                                name: file.name,
-                                type: file.type,
-                                size: file.size,
-                                data: e.target.result
-                            },
+                            type: 'text',
+                            message: messageText,
                             sender_id: currentUserId,
                             receiver_id: selectedUserId,
                             timestamp: new Date().toISOString()
                         };
                         ws.send(JSON.stringify(message));
+                        console.log('Text message sent:', messageText);
+                        messageInput.value = ''; // Clear the input after sending
+                    } else {
+                        console.error('WebSocket is not open');
                     }
-                };
-                reader.readAsDataURL(file);
-            });
-        
-      
-            function sendMessage() {
-                const messageText = messageInput.value.trim();
-                if (messageText && ws && selectedUserId) {
-                    const message = {
-                        type: 'text',
-                        message: messageText,
-                        sender_id: currentUserId,
-                        receiver_id: selectedUserId,
-                        timestamp: new Date().toISOString()
-                    };
-                    ws.send(JSON.stringify(message));
-                    messageInput.value = '';
                 }
             }
+            
         
             sendButton.addEventListener('click', sendMessage);
             messageInput.addEventListener('keypress', function(e) {

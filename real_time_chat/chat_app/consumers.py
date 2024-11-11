@@ -130,43 +130,161 @@ class ChatConsumer(AsyncWebsocketConsumer):
         current_messages.append(message)
         cache.set(self.room_group_name, current_messages)
 
+# class DirectMessageConsumer(AsyncWebsocketConsumer):
+#     async def connect(self):
+    
+#         self.user = self.scope['user']
+#         self.user_id = self.user.id
+#         self.receiver_id = int(self.scope['url_route']['kwargs']['user_id'])
+
+
+#         user_ids = sorted([self.user_id, self.receiver_id])
+#         self.room_group_name = f'chat_{user_ids[0]}_{user_ids[1]}'
+
+
+#         await self.channel_layer.group_add(
+#             self.room_group_name,
+#             self.channel_name
+#         )
+
+
+#         await self.channel_layer.group_add(
+#             f'user_{self.user_id}',
+#             self.channel_name
+#         )
+
+
+#         await sync_to_async(self.set_user_online)(self.user_id)
+
+
+#         await self.accept()
+
+
+#         messages = await sync_to_async(self.load_messages)()
+#         if messages:
+#             for message in messages:
+#                 await self.send(text_data=json.dumps(message))
+
+#     async def disconnect(self, close_code):
+      
+#         await self.channel_layer.group_discard(
+#             self.room_group_name,
+#             self.channel_name
+#         )
+
+#         await self.channel_layer.group_discard(
+#             f'user_{self.user_id}',
+#             self.channel_name
+#         )
+
+
+#         await sync_to_async(self.set_user_offline)(self.user_id)
+
+#     async def receive(self, text_data):
+#         data = json.loads(text_data)
+#         message = data['message']
+        
+
+#         message_data = {
+#             'type': 'chat_message',
+#             'message': message,
+#             'sender_id': self.user_id,
+#             'receiver_id': self.receiver_id,
+#             'sender': self.user.username,
+#             'timestamp': str(timezone.now())
+#         }
+
+ 
+#         await self.channel_layer.group_send(
+#             self.room_group_name,
+#             message_data
+#         )
+
+    
+#         await sync_to_async(self.save_message)(message)
+
+#     async def chat_message(self, event):
+
+#         await self.send(text_data=json.dumps({
+#             'message': event['message'],
+#             'sender_id': event['sender_id'],
+#             'receiver_id': event['receiver_id'],
+#             'sender': event['sender'],
+#             'timestamp': event['timestamp']
+#         }))
+
+#     def set_user_online(self, user_id):
+#         cache.set(f'user_status_{user_id}', 'online', timeout=None)
+
+#     def set_user_offline(self, user_id):
+#         cache.delete(f'user_status_{user_id}')
+
+#     def save_message(self, content):
+#         """Save message to database"""
+#         message = PrivateMessage.objects.create(
+#             sender_id=self.user_id,
+#             receiver_id=self.receiver_id,
+#             content=content
+#         )
+#         return message
+
+#     def load_messages(self):
+#         """Load recent messages for this conversation"""
+        
+#         messages = PrivateMessage.objects.filter(
+#             models.Q(sender_id=self.user_id, receiver_id=self.receiver_id) |
+#             models.Q(sender_id=self.receiver_id, receiver_id=self.user_id)
+#         ).order_by('-timestamp')[:50]
+
+#         message_list = []
+#         for message in messages:
+#             message_list.append({
+#                 'message': message.content,
+#                 'sender_id': message.sender_id,
+#                 'receiver_id': message.receiver_id,
+#                 'sender': User.objects.get(id=message.sender_id).username,
+#                 'timestamp': str(message.timestamp)
+#             })
+
+#         return message_list[::-1] 
+import json
+from asgiref.sync import sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.utils import timezone
+from .models import PrivateMessage
+from django.core.files.base import ContentFile
+import base64
+
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-    
         self.user = self.scope['user']
         self.user_id = self.user.id
         self.receiver_id = int(self.scope['url_route']['kwargs']['user_id'])
 
-
         user_ids = sorted([self.user_id, self.receiver_id])
         self.room_group_name = f'chat_{user_ids[0]}_{user_ids[1]}'
-
 
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
 
-
         await self.channel_layer.group_add(
             f'user_{self.user_id}',
             self.channel_name
         )
 
-
         await sync_to_async(self.set_user_online)(self.user_id)
-
 
         await self.accept()
 
-
+        # Load and send past messages to the client
         messages = await sync_to_async(self.load_messages)()
         if messages:
             for message in messages:
                 await self.send(text_data=json.dumps(message))
 
     async def disconnect(self, close_code):
-      
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
@@ -177,13 +295,19 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
-
         await sync_to_async(self.set_user_offline)(self.user_id)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        message = data['message']
-        
+        message = data.get('message', '')
+        attachment_data = data.get('attachment', None)
+
+        attachment_file = None
+        if attachment_data:
+            file_name = attachment_data['name']
+            file_data = attachment_data['data'].split(',')[1]  # Remove data URI scheme prefix
+            decoded_file = base64.b64decode(file_data)
+            attachment_file = ContentFile(decoded_file, name=file_name)
 
         message_data = {
             'type': 'chat_message',
@@ -191,26 +315,27 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             'sender_id': self.user_id,
             'receiver_id': self.receiver_id,
             'sender': self.user.username,
-            'timestamp': str(timezone.now())
+            'timestamp': str(timezone.now()),
+            'attachment': attachment_data['name'] if attachment_data else None
         }
 
- 
+        # Save the message with the attachment if provided
+        await sync_to_async(self.save_message)(message, attachment_file)
+
+        # Broadcast the message to the group
         await self.channel_layer.group_send(
             self.room_group_name,
             message_data
         )
 
-    
-        await sync_to_async(self.save_message)(message)
-
     async def chat_message(self, event):
-
         await self.send(text_data=json.dumps({
             'message': event['message'],
             'sender_id': event['sender_id'],
             'receiver_id': event['receiver_id'],
             'sender': event['sender'],
-            'timestamp': event['timestamp']
+            'timestamp': event['timestamp'],
+            'attachment': event.get('attachment', None)
         }))
 
     def set_user_online(self, user_id):
@@ -219,18 +344,18 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
     def set_user_offline(self, user_id):
         cache.delete(f'user_status_{user_id}')
 
-    def save_message(self, content):
-        """Save message to database"""
+    def save_message(self, content, attachment_file=None):
+        """Save message to the database with optional file attachment."""
         message = PrivateMessage.objects.create(
             sender_id=self.user_id,
             receiver_id=self.receiver_id,
-            content=content
+            content=content,
+            attachment=attachment_file
         )
         return message
 
     def load_messages(self):
-        """Load recent messages for this conversation"""
-        
+        """Load recent messages for this conversation."""
         messages = PrivateMessage.objects.filter(
             models.Q(sender_id=self.user_id, receiver_id=self.receiver_id) |
             models.Q(sender_id=self.receiver_id, receiver_id=self.user_id)
@@ -242,8 +367,9 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
                 'message': message.content,
                 'sender_id': message.sender_id,
                 'receiver_id': message.receiver_id,
-                'sender': User.objects.get(id=message.sender_id).username,
-                'timestamp': str(message.timestamp)
+                'sender': message.sender.username,
+                'timestamp': str(message.timestamp),
+                'attachment': message.attachment.url if message.attachment else None
             })
 
-        return message_list[::-1] 
+        return message_list[::-1]  # Return messages in chronological order

@@ -16,7 +16,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = 'django-insecure-1*=om_0o70axv04x@aw2vn(sj*@=72sy!(*9*^r^t-=zxd-*ql'
 
 
@@ -87,6 +87,9 @@ TEMPLATES = [
         },
     },
 ]
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 ASGI_APPLICATION = 'real_time_chat.asgi.application'
 

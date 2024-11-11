@@ -9,4 +9,4 @@ class ChatRoomForm(forms.ModelForm):
 class PrivateMessageForm(forms.ModelForm):
     class Meta:
         model = PrivateMessage
-        fields = ['receiver', 'content']
+        fields = ['receiver', 'content','attachment']
