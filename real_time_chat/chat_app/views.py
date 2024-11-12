@@ -14,6 +14,7 @@ from django.db.models import Q
 from django.core.cache import cache
 
 
+
 @login_required 
 def chat_home(request):
     rooms = ChatRoom.objects.all()  
@@ -69,8 +70,7 @@ def user_list_view(request):
     users = User.objects.exclude(id=request.user.id)  #
     return render(request, "dm.html", {"users": users, "selected_user": None})
 
-from django.shortcuts import render, get_object_or_404
-from .models import User, PrivateMessage  
+
 
 def user_list_view(request):
     users = User.objects.exclude(id=request.user.id)  

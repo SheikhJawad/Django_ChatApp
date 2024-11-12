@@ -671,6 +671,7 @@
        #clear-button{
         display: content;
        }
+       
         /* Mobile-specific styles */
         @media (max-width: 768px) {
             #sidebar {
@@ -862,21 +863,25 @@
                             <span>&#128151;</span>
                         </button>
                         <button 
-                            id="file-button" 
-                            class="bg-dark-brown text-white px-4 py-2 rounded-full hover:bg-brand-secondary transition-colors duration-300 flex items-center"
-                            onclick="document.getElementById('file-input').click()"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1V4zm1 1v10h12V5H4z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <input 
-                            type="file" 
-                            id="file-input" 
-                            accept="image/*,.pdf,.doc,.docx"
-                            style="display: none;" 
-                            onchange="handleFileSelect(this.files[0])"
-                        >
+                        id="file-button" 
+                        type="button"  
+                        class="bg-dark-brown text-white px-4 py-2 rounded-full hover:bg-brand-secondary transition-colors duration-300 flex items-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1V4zm1 1v10h12V5H4z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    
+                    <input 
+                        type="file" 
+                        id="file-input" 
+                        accept="image/*,.pdf,.doc,.docx"
+                        style="display: none;" 
+                    >
+                    
+
+                        
+                        
                         <button 
                             id="send-button" 
                             onclick="handleSendMessage()"
@@ -1417,49 +1422,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         
 
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.style.display = 'none';
-            fileInput.accept = 'image/*,.pdf,.doc,.docx';
-            document.body.appendChild(fileInput);
-            
-            fileButton.addEventListener('click', () => fileInput.click());
-            
-            fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-            
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    if (ws && selectedUserId) {
-                        if (ws.readyState === WebSocket.OPEN) {
-                            const message = {
-                                type: 'file',
-                                file: {
-                                    name: file.name,
-                                    type: file.type,
-                                    size: file.size,
-                                    data: e.target.result // Base64-encoded data
-                                },
-                                sender_id: currentUserId,
-                                receiver_id: selectedUserId,
-                                timestamp: new Date().toISOString()
-                            };
-                            ws.send(JSON.stringify(message));
-                            console.log('File sent:', file.name);
-                        } else {
-                            console.error('WebSocket is not open');
-                        }
-                    }
-                };
-            
-                reader.onerror = function(error) {
-                    console.error('Error reading file:', error);
-                };
-            
-                reader.readAsDataURL(file); // Read the file as base64
-            });
-            
+           // Create file input and attach it to document
+
             // Send text message function
             function sendMessage() {
                 const messageText = messageInput.value.trim();

@@ -1,19 +1,16 @@
-from channels.generic.websocket import AsyncWebsocketConsumer
+
 import json
-from .models import ChatRoom, Message
+from .models import *
 from django.contrib.auth.models import User
 from asgiref.sync import sync_to_async
 from django.core.cache import cache
-from django.utils import timezone
 from django.contrib.auth import get_user_model
 from channels.generic.websocket import AsyncWebsocketConsumer
-import json
-from asgiref.sync import sync_to_async
 from django.core.cache import cache
 from django.utils import timezone
 from django.db import models
-from django.contrib.auth import get_user_model
-from .models import PrivateMessage
+from django.core.files.base import ContentFile
+import base64
 
 User = get_user_model()
 
@@ -247,13 +244,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 #             })
 
 #         return message_list[::-1] 
-import json
-from asgiref.sync import sync_to_async
-from channels.generic.websocket import AsyncWebsocketConsumer
-from django.utils import timezone
-from .models import PrivateMessage
-from django.core.files.base import ContentFile
-import base64
+
 
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -278,7 +269,7 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        # Load and send past messages to the client
+    
         messages = await sync_to_async(self.load_messages)()
         if messages:
             for message in messages:
@@ -305,7 +296,7 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
         attachment_file = None
         if attachment_data:
             file_name = attachment_data['name']
-            file_data = attachment_data['data'].split(',')[1]  # Remove data URI scheme prefix
+            file_data = attachment_data['data'].split(',')[1]  
             decoded_file = base64.b64decode(file_data)
             attachment_file = ContentFile(decoded_file, name=file_name)
 
@@ -319,10 +310,10 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             'attachment': attachment_data['name'] if attachment_data else None
         }
 
-        # Save the message with the attachment if provided
+     
         await sync_to_async(self.save_message)(message, attachment_file)
 
-        # Broadcast the message to the group
+
         await self.channel_layer.group_send(
             self.room_group_name,
             message_data
@@ -372,4 +363,4 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
                 'attachment': message.attachment.url if message.attachment else None
             })
 
-        return message_list[::-1]  # Return messages in chronological order
+        return message_list[::-1]  
