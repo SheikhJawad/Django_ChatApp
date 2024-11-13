@@ -12,5 +12,6 @@ urlpatterns = [
          path('dm/', views.direct_message_view, name='direct_message_index'),  # Base DM URL
         path('dm/<int:user_id>/', views.direct_message_view, name='direct_message'),  # DM with specific user
         path('user-status/<int:user_id>/', views.get_user_status, name='get_user_status'),
+        
 ]
 

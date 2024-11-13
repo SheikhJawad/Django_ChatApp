@@ -59,11 +59,20 @@ def create_room_view(request):
         if room_form.is_valid():
             room = room_form.save()
             room.members.add(request.user)  
-            return redirect('chat_home')  #
+            return redirect('chat_home')  
     else:
         room_form = ChatRoomForm()
 
-    context = {'room_form': room_form}
+    # Get all users for the user list
+    users = User.objects.all()
+    # Get online users (you can modify this based on your user tracking method)
+    online_users = [request.user.id]  # Currently logged in user will show as online
+
+    context = {
+        'room_form': room_form,
+        'users': users,
+        'online_users': online_users
+    }
     return render(request, 'chat/create_room.html', context)
 @login_required
 def user_list_view(request):

@@ -8,48 +8,223 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a8a5e6;
+            --accent-color: #8e44ad;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+        }
+
         body {
-            background-color: #f8f9fa; 
-            color: #343a40;
+            background-color: var(--background-color);
+            color: #2d3436;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 2rem 0;
         }
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            margin-top: 30px;
+
+        .container {
+            max-width: 800px;
         }
+
         h1 {
-            font-weight: 500; 
-            margin-bottom: 20px; 
+            font-weight: 600;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            background: var(--card-background);
+            transition: transform 0.3s ease;
+            padding: 2rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25);
+        }
+
+        .btn-custom {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 25px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
         .user-status {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            transition: all 0.3s ease;
         }
+
+        .user-status:hover {
+            transform: translateX(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
         .status-icon {
             width: 12px;
             height: 12px;
             border-radius: 50%;
+            margin-right: 15px;
+            position: relative;
+        }
+
+        .status-icon.active {
+            background-color: #00b894;
+            box-shadow: 0 0 10px rgba(0, 184, 148, 0.5);
+        }
+        <style>
+            .user-status {
+                background: rgba(255, 255, 255, 0.9);
+                padding: 15px;
+                border-radius: 15px;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                transition: all 0.3s ease;
+            }
+        
+            .user-status:hover {
+                transform: translateX(10px);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+        
+            .user-info {
+                display: flex;
+                flex-direction: column;
+                margin-left: 10px;
+            }
+        
+            .username {
+                font-weight: 600;
+                margin: 0;
+                font-size: 0.95rem;
+                color: #2d3436;
+            }
+        
+            .status-text {
+                margin: 0;
+                font-size: 0.75rem;
+            }
+        
+            .text-success {
+                color: #00b894;
+            }
+        
+            .text-muted {
+                color: #95a5a6;
+            }
+        
+            .status-icon {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 15px;
+                position: relative;
+            }
+        
+            .status-icon.active {
+                background-color: #00b894;
+                box-shadow: 0 0 10px rgba(0, 184, 148, 0.5);
+            }
+        
+            .status-icon.inactive {
+                background-color: #ff7675;
+                box-shadow: 0 0 10px rgba(255, 118, 117, 0.5);
+            }
+        
+            .fas.fa-user {
+                color: var(--primary-color);
+                font-size: 1.2rem;
+                margin-right: 10px;
+            }
+
+        .status-icon.inactive {
+            background-color: #ff7675;
+            box-shadow: 0 0 10px rgba(255, 118, 117, 0.5);
+        }
+
+        .fas.fa-user {
+            color: var(--primary-color);
+            font-size: 1.2rem;
             margin-right: 10px;
         }
-        .active {
-            background-color: #28a745; 
-        }
-        .inactive {
-            background-color: #dc3545; 
-        }
-        .btn-custom {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
-        .btn-custom:hover {
-            background-color: #0056b3; 
-            border-color: #0056b3;
-        }
+
         .footer {
-            margin-top: 30px;
+            margin-top: 3rem;
             text-align: center;
+            color: #636e72;
             font-size: 0.9rem;
+            padding: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Form specific styles */
+        label {
+            font-weight: 600;
+            color: #2d3436;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
@@ -58,31 +233,39 @@
         <h1>Create a New Chat Room</h1>
         <form method="POST">
             {% csrf_token %}
-            <div class="card p-4">
+            <div class="card">
                 {{ room_form.as_p }}
-                <button type="submit" class="btn btn-custom btn-block">Create Room</button>
+                <button type="submit" class="btn btn-custom btn-block">
+                    <i class="fas fa-plus-circle mr-2"></i>Create Room
+                </button>
             </div>
         </form>
-        <a href="{% url 'chat_home' %}" class="btn btn-secondary mt-3">Back to Home</a>
+        <div class="text-center mt-4">
+            <a href="{% url 'chat_home' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Home
+            </a>
+        </div>
 
-        <div class="mt-4">
-            <h4>User Status</h4>
+        <div class="mt-5">
+            <h4 class="mb-4" style="color: var(--primary-color);">
+                <i class="fas fa-users mr-2"></i>Connected Users
+            </h4>
+            {% for user in users %}
             <div class="user-status">
-                <div class="status-icon active"></div>
-                <i class="fas fa-user"></i> Active User 1
+                <div class="status-icon {% if user.id in online_users %}active{% else %}inactive{% endif %}"></div>
+                <i class="fas fa-user"></i>
+                <div class="user-info">
+                    <p class="username">{{ user.username }}</p>
+                    <p class="status-text {% if user.id in online_users %}text-success{% else %}text-muted{% endif %}">
+                        {% if user.id in online_users %}Online{% else %}Offline{% endif %}
+                    </p>
+                </div>
             </div>
-            <div class="user-status">
-                <div class="status-icon inactive"></div>
-                <i class="fas fa-user"></i> Inactive User 2
-            </div>
-            <div class="user-status">
-                <div class="status-icon active"></div>
-                <i class="fas fa-user"></i> Active User 3
-            </div>
+            {% endfor %}
         </div>
         
         <div class="footer">
-            <p>&copy; 2024 Your Chat Application</p>
+            <p>© 2024 Your Chat Application | Made with <i class="fas fa-heart" style="color: var(--accent-color)"></i></p>
         </div>
     </div>
 

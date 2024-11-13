@@ -862,23 +862,14 @@
                         >
                             <span>&#128151;</span>
                         </button>
-                        <button 
-                        id="file-button" 
-                        type="button"  
-                        class="bg-dark-brown text-white px-4 py-2 rounded-full hover:bg-brand-secondary transition-colors duration-300 flex items-center"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1V4zm1 1v10h12V5H4z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
+                        <button class="upload-button ...">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
                     
-                    <input 
-                        type="file" 
-                        id="file-input" 
-                        accept="image/*,.pdf,.doc,.docx"
-                        style="display: none;" 
-                    >
-                    
+                        <input type="file" id="file-input" accept="image/*,.pdf,.doc,.docx" style="display: none;">
+    
 
                         
                         
@@ -896,136 +887,193 @@
             </div>
         
             <script>
-                // Configuration
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 5MB limit
-const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain'];
+                            // Initialize WebSocket connection
+// Global variables
+let chatSocket = null;
+let selectedUserId = null;
+let messageContainer = null;
+let currentUserId = null; // Make sure this is set from your template
 
-// Handle file selection with validation and error handling
-function handleFileSelect(file) {
-    if (!file) {
-        console.error('No file selected');
-        alert('Please select a file to send.');
+// Initialize WebSocket connection
+function initializeWebSocket(userId) {
+    if (!userId) {
+        console.error('No user ID provided for WebSocket connection');
         return;
     }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-        console.error('File too large:', file.size);
-        alert(`File size must be under ${MAX_FILE_SIZE / 1024 / 1024}MB. Current file is ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    selectedUserId = userId;
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/dm/${userId}/`;
+    
+    console.log('Connecting to WebSocket:', wsUrl); // Debug log
+
+    try {
+        chatSocket = new WebSocket(wsUrl);
+
+        chatSocket.onopen = function(e) {
+            console.log('WebSocket connection established');
+            document.querySelector('.connection-status')?.remove();
+        };
+
+        chatSocket.onmessage = function(e) {
+            try {
+                const data = JSON.parse(e.data);
+                displayMessage(data);
+            } catch (error) {
+                console.error('Error processing message:', error);
+            }
+        };
+
+        chatSocket.onclose = function(e) {
+            console.log('WebSocket connection closed. Attempting to reconnect...');
+            showConnectionStatus('Connecting...', 'warning');
+            // Attempt to reconnect after 3 seconds
+            setTimeout(() => {
+                initializeWebSocket(userId);
+            }, 3000);
+        };
+
+        chatSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+            showConnectionStatus('Connection error. Retrying...', 'error');
+        };
+
+    } catch (error) {
+        console.error('Error creating WebSocket connection:', error);
+        showConnectionStatus('Connection error. Please refresh the page.', 'error');
+    }
+}
+
+// Show connection status message
+function showConnectionStatus(message, type = 'info') {
+    let statusDiv = document.querySelector('.connection-status');
+    
+    if (!statusDiv) {
+        statusDiv = document.createElement('div');
+        statusDiv.className = 'connection-status fixed top-4 right-4 p-3 rounded shadow-lg z-50';
+        document.body.appendChild(statusDiv);
+    }
+
+    statusDiv.className = `connection-status fixed top-4 right-4 p-3 rounded shadow-lg z-50 ${
+        type === 'error' ? 'bg-red-500' : 
+        type === 'warning' ? 'bg-yellow-500' : 
+        'bg-blue-500'
+    } text-white`;
+    
+    statusDiv.textContent = message;
+}
+
+// Handle file selection and upload
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check WebSocket connection first
+    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+        alert('Connection not established. Please wait or refresh the page.');
         return;
     }
 
-    // Validate file type
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-        console.error('Invalid file type:', file.type);
-        alert(`File type not allowed. Allowed types: ${ALLOWED_FILE_TYPES.join(', ')}`);
+    messageContainer = document.querySelector('#chat-messages');
+    if (!messageContainer) {
+        console.error('Chat messages container not found');
+        alert('Error: Message container not found. Please refresh the page.');
         return;
     }
 
-    // Check WebSocket connection
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket not connected. Current state:', socket ? socket.readyState : 'undefined');
-        alert('Connection error. Please wait while we reconnect...');
-        initializeWebSocket();
+    // File validation
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+        alert('File size must be less than 5MB');
         return;
     }
 
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('File type not allowed. Please upload images, PDFs, or Word documents.');
+        return;
+    }
+
+    // Show loading indicator
+    const loadingDiv = createLoadingIndicator();
+    messageContainer.appendChild(loadingDiv);
+
+    // Read and send file
     const reader = new FileReader();
     
     reader.onload = function(e) {
         try {
-            const message = {
-                type: 'file',
-                file: {
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
-                    data: e.target.result
-                },
-                sender_id: currentUserId,
-                receiver_id: selectedUserId,
-                timestamp: new Date().toISOString()
+            loadingDiv.remove();
+
+            const fileData = {
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                data: e.target.result
             };
 
-            // Add loading indicator
-            const loadingMessage = {
-                type: 'status',
-                content: `Sending ${file.name}...`,
-                sender_id: currentUserId,
-                timestamp: new Date().toISOString()
-            };
-            displayMessage(loadingMessage);
-
-            // Send file in chunks if it's large
-            const chunkSize = 1024 * 64; // 64KB chunks
-            const data = e.target.result;
-            let offset = 0;
-
-            function sendChunk() {
-                const chunk = data.slice(offset, offset + chunkSize);
-                const isLastChunk = offset + chunkSize >= data.length;
-
-                const chunkMessage = {
-                    type: 'file_chunk',
-                    file: {
-                        name: file.name,
-                        type: file.type,
-                        chunk: chunk,
-                        offset: offset,
-                        isLastChunk: isLastChunk
-                    },
-                    sender_id: currentUserId,
-                    receiver_id: selectedUserId,
-                    timestamp: new Date().toISOString()
-                };
-
-                socket.send(JSON.stringify(chunkMessage));
-
-                if (!isLastChunk) {
-                    offset += chunkSize;
-                    setTimeout(sendChunk, 50); // Add delay between chunks
-                } else {
-                    // File transfer complete
-                    displayMessage(message);
-                }
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    message: '',
+                    attachment: fileData
+                }));
+            } else {
+                throw new Error('WebSocket not connected');
             }
-
-            sendChunk();
-
         } catch (error) {
-            console.error('Error preparing file:', error);
-            alert('Error preparing file for upload. Please try again.');
+            console.error('Error sending file:', error);
+            alert('Error sending file. Please try again.');
+            loadingDiv.remove();
         }
     };
 
     reader.onerror = function(error) {
         console.error('Error reading file:', error);
         alert('Error reading file. Please try again.');
+        loadingDiv.remove();
     };
 
-    try {
-        reader.readAsDataURL(file);
-    } catch (error) {
-        console.error('Error starting file read:', error);
-        alert('Error processing file. Please try again.');
-    }
+    reader.readAsDataURL(file);
 }
 
-// Add event listener for file input
-function initializeFileUpload() {
+// Initialize event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Get current user ID from the page
+    const userElement = document.querySelector('[data-current-user]');
+    if (userElement) {
+        currentUserId = userElement.dataset.currentUser;
+    }
+
+    // Initialize message container
+    messageContainer = document.querySelector('#chat-messages');
+    
+    // Initialize WebSocket if user is selected
+    const chatContainer = document.querySelector('[data-selected-user]');
+    if (chatContainer) {
+        const userId = chatContainer.dataset.selectedUser;
+        if (userId) {
+            initializeWebSocket(userId);
+        }
+    }
+
+    // File input handler
     const fileInput = document.getElementById('file-input');
     if (fileInput) {
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            handleFileSelect(file);
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    // Upload button handler
+    const uploadButton = document.querySelector('.upload-button');
+    if (uploadButton) {
+        uploadButton.addEventListener('click', () => {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput) {
+                fileInput.click();
+            }
         });
     }
-}
-
-// Initialize file upload when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    initializeFileUpload();
 });
+
             </script>
         </div>
     </div>
