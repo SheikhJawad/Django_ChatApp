@@ -14,6 +14,8 @@ application = ProtocolTypeRouter({
         URLRouter([
             path("ws/chat/<str:room_name>/", ChatConsumer.as_asgi()),
           re_path(r'ws/dm/(?P<user_id>\d+)/$', DirectMessageConsumer.as_asgi()),  # Adjust regex as needed
+           re_path(r'ws/game/(?P<game_id>\d+)/$', GameConsumer.as_asgi()),
+  
         ])
     ),
 })

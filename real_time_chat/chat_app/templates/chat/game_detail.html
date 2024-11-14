@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>20 Questions Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+    h1 {
+      margin: 0;
+    }
+    main {
+      padding: 20px;
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+    p, h2 {
+      color: #333;
+    }
+    #questions {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    #questions li {
+      background-color: #f9f9f9;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    #questions strong {
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .answer-form {
+      margin-top: 10px;
+    }
+    .hidden {
+      color: #aaa;
+    }
+    .game-status {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .game-result {
+      font-size: 1.5em;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>20 Questions Game</h1>
+  </header>
+
+  <main>
+    <p><strong>Thinker:</strong> {{ game_session.thinker.username }}</p>
+    <p><strong>Secret Item:</strong> <span class="hidden">(Hidden)</span></p>
+
+    <h2>Questions:</h2>
+    <ul id="questions">
+      {% for question in questions %}
+        <li data-question-id="{{ question.id }}">
+          <strong>{{ question.user.username }}:</strong> {{ question.question_text }}
+          {% if question.answer %}
+            <em> - {{ question.answer }}</em>
+          {% else %}
+            {% if user == game_session.thinker %}
+              <form method="post" class="answer-form">
+                {% csrf_token %}
+                <input type="hidden" name="question_id" value="{{ question.id }}">
+                <select name="answer">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                  <option value="I don't know">I don't know</option>
+                </select>
+                <button type="submit" name="answer_question">Submit Answer</button>
+              </form>
+            {% endif %}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    {% if game_session.is_active and user != game_session.thinker %}
+      <form method="post" id="question-form">
+        {% csrf_token %}
+        <input type="text" id="question-input" name="question_text" placeholder="Ask a yes/no question" required>
+      <button type="submit" id="submit-question" name="ask_question">Submit Question</button>
+      </form>
+
+      <!-- Guessing form -->
+      <form method="post" id="guess-form" style="margin-top: 20px;">
+        {% csrf_token %}
+        <input type="text" id="guess-input" name="guess_text" placeholder="Make your guess (e.g. 'Is it a cat?')" required>
+        <button type="submit" id="submit-guess" name="submit_guess">Submit Guess</button>
+      </form>
+    {% endif %}
+
+    <div class="game-status">
+      {% if game_session.is_active %}
+        The game is currently active.
+      {% else %}
+        The game is over.
+      {% endif %}
+    </div>
+
+    <!-- Game result announcement -->
+    <div class="game-result">
+      {% if game_session.is_active == false %}
+        {% if game_session.winner %}
+          Congratulations, you are the winner!
+        {% else %}
+          Sorry, you lost the game. Better luck next time!
+        {% endif %}
+      {% endif %}
+    </div>
+  </main>
+
+  <script>
+    let attemptsLeft = 3; // Set the number of attempts to 3
+    const secretItem = "{{ game_session.secret_item }}"; // Get the secret item from the Django template
+    const gameId = '{{ game_session.id }}';
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/game/' + gameId + '/'
+    );
+
+    chatSocket.onopen = function(e) {
+        console.log('WebSocket connection opened:', e);
+    };
+
+    chatSocket.onmessage = function(e) {
+        console.log('Message received:', e.data);
+        const data = JSON.parse(e.data);
+        if (data.type === 'new_question') {
+            document.querySelector('#questions').innerHTML += `
+              <li><strong>${data.user}:</strong> ${data.question_text}</li>
+            `;
+        } else if (data.type === 'new_answer') {
+            const questionElement = document.querySelector(`[data-question-id="${data.question_id}"]`);
+            if (questionElement) {
+                questionElement.innerHTML += `<em> - ${data.answer}</em>`;
+            }
+        }
+    };
+
+    chatSocket.onerror = function(e) {
+        console.error('WebSocket error occurred:', e);
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('WebSocket closed unexpectedly:', e);
+    };
+
+    // Submit form handling for questions
+    document.querySelector('#question-form').onsubmit = function(e) {
+        e.preventDefault();
+        const questionInput = document.querySelector('#question-input');
+        chatSocket.send(JSON.stringify({
+            'type': 'ask_question',
+            'question_text': questionInput.value,
+            'user': '{{ user.username }}'
+        }));
+        questionInput.value = ''; // Clear the input after sending
+    };
+
+    // Submit form handling for guesses
+    document.querySelector('#guess-form').onsubmit = function(e) {
+        e.preventDefault();
+        const guessInput = document.querySelector('#guess-input').value;
+        if (guessInput.toLowerCase() === secretItem.toLowerCase()) {
+            alert('Congratulations! You guessed it correctly, you are the winner!');
+            chatSocket.send(JSON.stringify({
+                'type': 'game_over',
+                'result': 'win'
+            }));
+            document.querySelector('.game-status').textContent = 'The game is over. You won!';
+            document.querySelector('#guess-form').style.display = 'none'; // Hide the guess form
+        } else {
+            attemptsLeft--;
+            if (attemptsLeft <= 0) {
+                alert('Sorry! You lost. The correct answer was ' + secretItem);
+                chatSocket.send(JSON.stringify({
+                    'type': 'game_over',
+                    'result': 'lose'
+                }));
+                document.querySelector('.game-status').textContent = 'The game is over. You lost!';
+                document.querySelector('#guess-form').style.display = 'none'; // Hide the guess form
+            } else {
+                alert('Wrong guess! You have ' + attemptsLeft + ' attempts left.');
+            }
+        }
+        document.querySelector('#guess-input').value = ''; // Clear the input after submitting guess
+    };
+
+    window.onbeforeunload = function() {
+        chatSocket.close();
+    };
+  </script>
+
+</body>
+</html>

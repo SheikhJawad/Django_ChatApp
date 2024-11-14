@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from.forms import*
 from django.db.models import Q
 from django.core.cache import cache
+from django.views.decorators.csrf import csrf_exempt
 
 
 
@@ -126,3 +127,51 @@ def get_user_status(request, user_id):
   
     status = cache.get(f'user_status_{user_id}', 'offline')
     return JsonResponse({'status': status})
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import GameSession, Question
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def start_game(request):
+    if request.method == 'POST':
+        secret_item = request.POST.get('secret_item')
+        if secret_item:
+            game_session = GameSession.objects.create(thinker=request.user, secret_item=secret_item)
+            return redirect('game_detail', game_id=game_session.id)
+    return render(request, 'chat/start_game.html')
+
+
+
+
+@csrf_exempt
+def game_detail(request, game_id):
+    game_session = get_object_or_404(GameSession, id=game_id)
+    questions = Question.objects.filter(game_session=game_session).order_by('created_at')
+
+    if request.method == 'POST':
+        if 'ask_question' in request.POST:
+            question_text = request.POST.get('question_text')
+            if question_text and len(questions) < 20:
+                Question.objects.create(game_session=game_session, user=request.user, question_text=question_text)
+  
+                return redirect('chat/game_detail', game_id=game_id)
+        
+        elif 'answer_question' in request.POST:
+            question_id = request.POST.get('question_id')
+            answer = request.POST.get('answer')
+            question = get_object_or_404(Question, id=question_id)
+            if question and game_session.thinker == request.user:
+                question.answer = answer
+                question.save()
+       
+                return redirect('chat/game_detail', game_id=game_id)
+
+    context = {
+        'game_session': game_session,
+        'questions': questions,
+        'user': request.user
+    }
+    return render(request, 'chat/game_detail.html', context)
+
