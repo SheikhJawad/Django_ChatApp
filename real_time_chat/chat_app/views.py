@@ -129,9 +129,6 @@ def get_user_status(request, user_id):
     return JsonResponse({'status': status})
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import GameSession, Question
-from django.contrib.auth.decorators import login_required
 
 @login_required
 def start_game(request):
@@ -146,6 +143,7 @@ def start_game(request):
 
 
 @csrf_exempt
+@login_required
 def game_detail(request, game_id):
     game_session = get_object_or_404(GameSession, id=game_id)
     questions = Question.objects.filter(game_session=game_session).order_by('created_at')
@@ -155,7 +153,6 @@ def game_detail(request, game_id):
             question_text = request.POST.get('question_text')
             if question_text and len(questions) < 20:
                 Question.objects.create(game_session=game_session, user=request.user, question_text=question_text)
-  
                 return redirect('chat/game_detail', game_id=game_id)
         
         elif 'answer_question' in request.POST:
@@ -165,13 +162,23 @@ def game_detail(request, game_id):
             if question and game_session.thinker == request.user:
                 question.answer = answer
                 question.save()
-       
                 return redirect('chat/game_detail', game_id=game_id)
 
     context = {
         'game_session': game_session,
         'questions': questions,
-        'user': request.user
+        'user': request.user,
+        'playing_user': game_session.thinker,  # Add this line to show the game player
     }
     return render(request, 'chat/game_detail.html', context)
 
+
+from django.shortcuts import render
+from .models import GameSession
+
+def active_games(request):
+    active_game_sessions = GameSession.objects.filter(is_active=True)
+    context = {
+        'active_game_sessions': active_game_sessions
+    }
+    return render(request, 'chat/active_game.html', context)

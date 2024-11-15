@@ -95,14 +95,28 @@
   </style>
 </head>
 <body>
-
   <header>
     <h1>20 Questions Game</h1>
   </header>
 
   <main>
+    <!-- Display the thinker (the user playing the game) -->
     <p><strong>Thinker:</strong> {{ game_session.thinker.username }}</p>
     <p><strong>Secret Item:</strong> <span class="hidden">(Hidden)</span></p>
+
+    <!-- Display game status -->
+    <div class="game-status">
+      {% if game_session.is_active %}
+        <p>The game is currently active.</p>
+        {% if user == game_session.thinker %}
+          <p><em>You are the thinker. Wait for questions or answer them.</em></p>
+        {% else %}
+          <p><em>{{ game_session.thinker.username }} is playing. You can ask questions or make guesses.</em></p>
+        {% endif %}
+      {% else %}
+        <p>The game is over.</p>
+      {% endif %}
+    </div>
 
     <h2>Questions:</h2>
     <ul id="questions">
@@ -113,6 +127,7 @@
             <em> - {{ question.answer }}</em>
           {% else %}
             {% if user == game_session.thinker %}
+              <!-- Answer form for the thinker -->
               <form method="post" class="answer-form">
                 {% csrf_token %}
                 <input type="hidden" name="question_id" value="{{ question.id }}">
@@ -129,11 +144,12 @@
       {% endfor %}
     </ul>
 
+    <!-- Ask question form -->
     {% if game_session.is_active and user != game_session.thinker %}
       <form method="post" id="question-form">
         {% csrf_token %}
         <input type="text" id="question-input" name="question_text" placeholder="Ask a yes/no question" required>
-      <button type="submit" id="submit-question" name="ask_question">Submit Question</button>
+        <button type="submit" id="submit-question" name="ask_question">Submit Question</button>
       </form>
 
       <!-- Guessing form -->
@@ -144,29 +160,22 @@
       </form>
     {% endif %}
 
-    <div class="game-status">
-      {% if game_session.is_active %}
-        The game is currently active.
-      {% else %}
-        The game is over.
-      {% endif %}
-    </div>
-
     <!-- Game result announcement -->
     <div class="game-result">
       {% if game_session.is_active == false %}
         {% if game_session.winner %}
-          Congratulations, you are the winner!
+          <p>Congratulations, {{ game_session.winner.username }}, you are the winner!</p>
         {% else %}
-          Sorry, you lost the game. Better luck next time!
+          <p>Sorry, you lost the game. Better luck next time!</p>
         {% endif %}
       {% endif %}
     </div>
   </main>
 
+
   <script>
-    let attemptsLeft = 3; // Set the number of attempts to 3
-    const secretItem = "{{ game_session.secret_item }}"; // Get the secret item from the Django template
+    let attemptsLeft = 3;
+    const secretItem = "{{ game_session.secret_item }}"; 
     const gameId = '{{ game_session.id }}';
     const chatSocket = new WebSocket(
         'ws://' + window.location.host + '/ws/game/' + gameId + '/'
@@ -199,7 +208,7 @@
         console.error('WebSocket closed unexpectedly:', e);
     };
 
-    // Submit form handling for questions
+ 
     document.querySelector('#question-form').onsubmit = function(e) {
         e.preventDefault();
         const questionInput = document.querySelector('#question-input');
