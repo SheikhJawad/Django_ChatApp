@@ -69,6 +69,12 @@ def create_room_view(request):
     
     online_users = [request.user.id] 
 
+    # Get all users for the user list
+    users = User.objects.all()
+    # Get online users (you can modify this based on your user tracking method)
+    online_users = [request.user.id]  # Currently logged in user will show as online
+
+
     context = {
         'room_form': room_form,
         'users': users,
@@ -128,6 +134,7 @@ def get_user_status(request, user_id):
     status = cache.get(f'user_status_{user_id}', 'offline')
     return JsonResponse({'status': status})
 
+
 def active_games(request):
     active_game_sessions = GameSession.objects.filter(is_active=True)
     context = {
@@ -173,10 +180,25 @@ def game_detail(request, game_id):
         'game_session': game_session,
         'questions': questions,
         'user': request.user,
-        'playing_user': game_session.thinker,  
+
+        'playing_user': game_session.thinker, 
+        'playing_user': game_session.thinker,  # Add this line to show the game player
+
     }
     return render(request, 'chat/game_detail.html', context)
 
 
 
+
+
+
+from django.shortcuts import render
+from .models import GameSession
+
+def active_games(request):
+    active_game_sessions = GameSession.objects.filter(is_active=True)
+    context = {
+        'active_game_sessions': active_game_sessions
+    }
+    return render(request, 'chat/active_game.html', context)
 

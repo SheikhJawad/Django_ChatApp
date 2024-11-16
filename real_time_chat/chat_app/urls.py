@@ -15,9 +15,7 @@ urlpatterns = [
         path('start-game/', views.start_game, name='start_game'),
     path('game/<int:game_id>/', views.game_detail, name='game_detail'),
       path('active-games/', views.active_games, name='active_games'),
-  
 
-      
         
 ]
 

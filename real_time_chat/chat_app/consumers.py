@@ -441,6 +441,12 @@ from django.utils import timezone
 from .models import GameSession, Question
 from django.contrib.auth.models import User  # Make sure to import User model
 
+import json
+import logging
+from channels.generic.websocket import AsyncWebsocketConsumer
+
+
+
 logger = logging.getLogger(__name__)
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -474,6 +480,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         data = json.loads(text_data)
         question_text = data.get('question_text', '')
+
         user = self.scope['user']  # This will give you the actual User instance
         
         logger.debug(f"Received question from {user.username}: {question_text}")
@@ -493,6 +500,21 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
+        user = self.scope['user'].username
+        
+        logger.debug(f"Received question from {user}: {question_text}")
+
+        # Send the question to the game group
+        await self.channel_layer.group_send(
+            self.game_group_name,
+            {
+                'type': 'game_question',
+                'user': user,
+                'question_text': question_text,
+            }
+        )
+
+
     async def game_question(self, event):
         logger.debug(f"Sending game question: {event}")
 
@@ -504,6 +526,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             'user': user,
             'question_text': question_text,
         }))
+
 
     # Helper method to get the GameSession by ID
     async def get_game_session(self, game_id):
