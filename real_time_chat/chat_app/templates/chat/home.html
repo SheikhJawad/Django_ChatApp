@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatApp - Connect, Collaborate, Communicate</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'ui-sans-serif', 'system-ui'],
+                    },
+                    colors: {
+                        'brand-primary': {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1'
+                        },
+                        'brand-secondary': {
+                            500: '#6366f1',
+                            600: '#4f46e5'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark body {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        }
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #cbebff 100%);
+        }
+        .room-card {
+            transition: all 0.3s ease;
+        }
+        .room-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased dark:bg-gray-900 dark:text-white">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-2xl font-bold text-brand-primary-600 dark:text-brand-primary-400 flex items-center">
+                            <i class="fas fa-comments mr-3"></i>
+                            ChatApp
+                        </h1>
+                    </div>
+                    
+                    <!-- Navigation Links -->
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 px-3 py-2 text-sm font-medium flex items-center">
+                            <i class="fas fa-home mr-2"></i>Home
+                        </a>
+                        <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 px-3 py-2 text-sm font-medium flex items-center">
+                            <i class="fas fa-info-circle mr-2"></i>About
+                        </a>
+                        <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 px-3 py-2 text-sm font-medium flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>Contact
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Dark Mode Toggle & Actions -->
+                <div class="flex items-center space-x-4">
+                    <button id="darkModeToggle" class="text-gray-600 dark:text-gray-300 hover:text-brand-primary-600 dark:hover:text-brand-primary-400 focus:outline-none transition-colors">
+                        <i id="darkModeIcon" class="fas fa-moon text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
+            <!-- Additional Action Buttons -->
+            <div class="flex space-x-4 mb-6">
+                <a href="{% url 'create_room' %}" class="bg-brand-primary-500 text-white px-4 py-2 rounded-lg hover:bg-brand-primary-600 dark:hover:bg-brand-primary-500 transition flex items-center">
+                    <i class="fas fa-plus mr-2"></i>Create New Room
+                </a>
+                <a href="{% url 'direct_message_index' %}" class="bg-brand-secondary-500 text-white px-4 py-2 rounded-lg hover:bg-brand-secondary-600 dark:hover:bg-brand-secondary-500 transition flex items-center">
+                    <i class="fas fa-envelope mr-2"></i>Direct Message
+                </a>
+                <a href="{% url 'start_game' %}" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 dark:hover:bg-green-500 transition flex items-center">
+                    <i class="fas fa-gamepad mr-2"></i>Start 20 Questions Game
+                </a>
+            </div>
+            
+
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-6 flex items-center">
+                <i class="fas fa-comments mr-4 text-brand-primary-600 dark:text-brand-primary-400"></i>
+                Available Chat Rooms
+            </h1>
+
+            <!-- Room List Grid -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for room in rooms %}
+                <div class="room-card bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <i class="fas fa-hashtag text-brand-primary-600 dark:text-brand-primary-400 mr-3 text-2xl"></i>
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
+                                {{ room.name }}
+                            </h3>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">Join the conversation and connect with others.</p>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                                <i class="fas fa-users mr-2"></i>
+                                {{ room.participants_count }} Participants
+                            </span>
+                            
+                            <a href="{% url 'chat_room' room.name %}" class="bg-brand-secondary-500 text-white px-4 py-2 rounded-lg hover:bg-brand-secondary-600 dark:hover:bg-brand-secondary-500 transition flex items-center">
+                                Join Room
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Empty State / Create Room Card -->
+                {% if not rooms %}
+                <div class="col-span-full bg-gray-50 dark:bg-gray-700 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                    <i class="fas fa-comment-slash text-5xl text-gray-400 dark:text-gray-500 mb-4"></i>
+                    <h3 class="text-2xl font-semibold text-gray-600 dark:text-gray-300 mb-2">No Rooms Available</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6">Create your first chat room and start connecting!</p>
+                    <button class="bg-brand-primary-500 text-white px-6 py-3 rounded-lg hover:bg-brand-primary-600 dark:hover:bg-brand-primary-500 transition flex items-center justify-center mx-auto">
+                        <i class="fas fa-plus mr-2"></i>
+                        Create New Room
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeIcon = document.getElementById('darkModeIcon');
+            const htmlElement = document.documentElement;
+
+            // Check for saved 'darkMode' in localStorage
+            let darkMode = localStorage.getItem('darkMode');
+
+            const enableDarkMode = () => {
+                htmlElement.classList.add('dark');
+                darkModeIcon.classList.remove('fa-moon');
+                darkModeIcon.classList.add('fa-sun');
+                localStorage.setItem('darkMode', 'enabled');
+            };
+
+            const disableDarkMode = () => {
+                htmlElement.classList.remove('dark');
+                darkModeIcon.classList.add('fa-moon');
+                darkModeIcon.classList.remove('fa-sun');
+                localStorage.setItem('darkMode', null);
+            };
+
+            // Check the current theme and apply
+            if (darkMode === 'enabled') {
+                enableDarkMode();
+            }
+
+            // Toggle dark mode
+            darkModeToggle.addEventListener('click', () => {
+                darkMode = localStorage.getItem('darkMode');
+                if (darkMode !== 'enabled') {
+                    enableDarkMode();
+                } else {
+                    disableDarkMode();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

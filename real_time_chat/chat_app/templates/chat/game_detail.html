@@ -1,0 +1,808 @@
+{% comment %} <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>20 Questions Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+    h1 {
+      margin: 0;
+    }
+    main {
+      padding: 20px;
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: white;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+    p, h2 {
+      color: #333;
+    }
+    #questions {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    #questions li {
+      background-color: #f9f9f9;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    #questions strong {
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .answer-form {
+      margin-top: 10px;
+    }
+    .hidden {
+      color: #aaa;
+    }
+    .game-status {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .game-result {
+      font-size: 1.5em;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>20 Questions Game</h1>
+  </header>
+
+  <main>
+    <!-- Display the thinker (the user playing the game) -->
+    <p><strong>Thinker:</strong> {{ game_session.thinker.username }}</p>
+    <p><strong>Secret Item:</strong> <span class="hidden">(Hidden)</span></p>
+
+    <!-- Display game status -->
+    <div class="game-status">
+      {% if game_session.is_active %}
+        <p>The game is currently active.</p>
+        {% if user == game_session.thinker %}
+          <p><em>You are the thinker. Wait for questions or answer them.</em></p>
+        {% else %}
+          <p><em>{{ game_session.thinker.username }} is playing. You can ask questions or make guesses.</em></p>
+        {% endif %}
+      {% else %}
+        <p>The game is over.</p>
+      {% endif %}
+    </div>
+
+    <h2>Questions:</h2>
+    <ul id="questions">
+      {% for question in questions %}
+        <li data-question-id="{{ question.id }}">
+          <strong>{{ question.user.username }}:</strong> {{ question.question_text }}
+          {% if question.answer %}
+            <em> - {{ question.answer }}</em>
+          {% else %}
+            {% if user == game_session.thinker %}
+              <!-- Answer form for the thinker -->
+              <form method="post" class="answer-form">
+                {% csrf_token %}
+                <input type="hidden" name="question_id" value="{{ question.id }}">
+                <select name="answer">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                  <option value="I don't know">I don't know</option>
+                </select>
+                <button type="submit" name="answer_question">Submit Answer</button>
+              </form>
+            {% endif %}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Ask question form -->
+    {% if game_session.is_active and user != game_session.thinker %}
+      <form method="post" id="question-form">
+        {% csrf_token %}
+        <input type="text" id="question-input" name="question_text" placeholder="Ask a yes/no question" required>
+        <button type="submit" id="submit-question" name="ask_question">Submit Question</button>
+      </form>
+
+      <!-- Guessing form -->
+      <form method="post" id="guess-form" style="margin-top: 20px;">
+        {% csrf_token %}
+        <input type="text" id="guess-input" name="guess_text" placeholder="Make your guess (e.g. 'Is it a cat?')" required>
+        <button type="submit" id="submit-guess" name="submit_guess">Submit Guess</button>
+      </form>
+    {% endif %}
+
+    <!-- Game result announcement -->
+    <div class="game-result">
+      {% if game_session.is_active == false %}
+        {% if game_session.winner %}
+          <p>Congratulations, {{ game_session.winner.username }}, you are the winner!</p>
+        {% else %}
+          <p>Sorry, you lost the game. Better luck next time!</p>
+        {% endif %}
+      {% endif %}
+    </div>
+  </main>
+
+
+  <script>
+    let attemptsLeft = 3;
+    const secretItem = "{{ game_session.secret_item }}"; 
+    const gameId = '{{ game_session.id }}';
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/game/' + gameId + '/'
+    );
+
+    chatSocket.onopen = function(e) {
+        console.log('WebSocket connection opened:', e);
+    };
+
+    chatSocket.onmessage = function(e) {
+        console.log('Message received:', e.data);
+        const data = JSON.parse(e.data);
+        if (data.type === 'new_question') {
+            document.querySelector('#questions').innerHTML += `
+              <li><strong>${data.user}:</strong> ${data.question_text}</li>
+            `;
+        } else if (data.type === 'new_answer') {
+            const questionElement = document.querySelector(`[data-question-id="${data.question_id}"]`);
+            if (questionElement) {
+                questionElement.innerHTML += `<em> - ${data.answer}</em>`;
+            }
+        }
+    };
+
+    chatSocket.onerror = function(e) {
+        console.error('WebSocket error occurred:', e);
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('WebSocket closed unexpectedly:', e);
+    };
+
+ 
+    document.querySelector('#question-form').onsubmit = function(e) {
+        e.preventDefault();
+        const questionInput = document.querySelector('#question-input');
+        chatSocket.send(JSON.stringify({
+            'type': 'ask_question',
+            'question_text': questionInput.value,
+            'user': '{{ user.username }}'
+        }));
+        questionInput.value = ''; // Clear the input after sending
+    };
+
+    // Submit form handling for guesses
+    document.querySelector('#guess-form').onsubmit = function(e) {
+        e.preventDefault();
+        const guessInput = document.querySelector('#guess-input').value;
+        if (guessInput.toLowerCase() === secretItem.toLowerCase()) {
+            alert('Congratulations! You guessed it correctly, you are the winner!');
+            chatSocket.send(JSON.stringify({
+                'type': 'game_over',
+                'result': 'win'
+            }));
+            document.querySelector('.game-status').textContent = 'The game is over. You won!';
+            document.querySelector('#guess-form').style.display = 'none'; // Hide the guess form
+        } else {
+            attemptsLeft--;
+            if (attemptsLeft <= 0) {
+                alert('Sorry! You lost. The correct answer was ' + secretItem);
+                chatSocket.send(JSON.stringify({
+                    'type': 'game_over',
+                    'result': 'lose'
+                }));
+                document.querySelector('.game-status').textContent = 'The game is over. You lost!';
+                document.querySelector('#guess-form').style.display = 'none'; // Hide the guess form
+            } else {
+                alert('Wrong guess! You have ' + attemptsLeft + ' attempts left.');
+            }
+        }
+        document.querySelector('#guess-input').value = ''; // Clear the input after submitting guess
+    };
+
+    window.onbeforeunload = function() {
+        chatSocket.close();
+    };
+  </script>
+
+</body>
+</html> {% endcomment %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>20 Questions Game</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      /* Light theme */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --accent-primary: #3b82f6;
+      --accent-hover: #2563eb;
+      --border-color: #e2e8f0;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --accent-primary: #60a5fa;
+      --accent-hover: #3b82f6;
+      --border-color: #334155;
+      --shadow-color: rgba(0, 0, 0, 0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    header {
+      background-color: var(--bg-primary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background-color: var(--bg-primary);
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px var(--shadow-color);
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      padding: 0.5rem;
+      font-size: 1.25rem;
+    }
+
+    .game-info {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background-color: var(--bg-secondary);
+      border-radius: 0.5rem;
+    }
+
+    .questions-list {
+      list-style: none;
+      display: grid;
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .question-item {
+      padding: 1rem;
+      background-color: var(--bg-secondary);
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .username {
+      font-weight: 600;
+      color: var(--accent-primary);
+    }
+
+    .answer-form {
+      margin-top: 1rem;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    input, select {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      width: 100%;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      background-color: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .game-status {
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .game-result {
+      text-align: center;
+      padding: 2rem;
+      background-color: var(--bg-secondary);
+      border-radius: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        margin: 1rem;
+        padding: 1rem;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>20 Questions Game</h1>
+    <button class="theme-toggle" aria-label="Toggle theme">
+      <i class="fas fa-moon"></i>
+    </button>
+  </header>
+
+  <main>
+    <div class="game-info">
+      <p><strong>Thinker:</strong> <span class="username">{{ game_session.thinker.username }}</span></p>
+      <p><strong>Secret Item:</strong> <span class="hidden">(Hidden)</span></p>
+      <div class="game-status">
+        {% if game_session.is_active %}
+          <p>
+            <i class="fas fa-circle" style="color: var(--accent-primary)"></i>
+            Game in progress
+          </p>
+          {% if user == game_session.thinker %}
+            <p><em>You are the thinker. Wait for questions or answer them.</em></p>
+          {% else %}
+            <p><em>{{ game_session.thinker.username }} is playing. You can ask questions or make guesses.</em></p>
+          {% endif %}
+        {% else %}
+          <p>
+            <i class="fas fa-circle" style="color: var(--text-secondary)"></i>
+            Game ended
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2>Questions</h2>
+    <ul class="questions-list" id="questions">
+      {% for question in questions %}
+        <li class="question-item" data-question-id="{{ question.id }}">
+          <div class="question-header">
+            <i class="fas fa-question-circle"></i>
+            <span class="username">{{ question.user.username }}</span>
+          </div>
+          <p>{{ question.question_text }}</p>
+          {% if question.answer %}
+            <p><em>Answer: {{ question.answer }}</em></p>
+          {% else %}
+            {% if user == game_session.thinker %}
+              <form method="post" class="answer-form">
+                {% csrf_token %}
+                <input type="hidden" name="question_id" value="{{ question.id }}">
+                <div class="input-group">
+                  <select name="answer" aria-label="Select answer">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="I don't know">I don't know</option>
+                  </select>
+                  <button type="submit" name="answer_question">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Answer
+                  </button>
+                </div>
+              </form>
+            {% endif %}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    
+
+    {% if game_session.is_active and user != game_session.thinker %}
+      <form method="post" id="question-form">
+        {% csrf_token %}
+        <div class="input-group">
+          <input type="text" id="question-input" name="question_text" placeholder="Ask a yes/no question" required
+                 aria-label="Question input">
+          <button type="submit" name="ask_question">
+            <i class="fas fa-question"></i>
+            Ask Question
+          </button>
+        </div>
+      </form>
+
+      <form method="post" id="guess-form">
+        {% csrf_token %}
+        <div class="input-group">
+          <input type="text" id="guess-input" name="guess_text" placeholder="Make your guess (e.g. 'Is it a cat?')" required
+                 aria-label="Guess input">
+          <button type="submit" name="submit_guess">
+            <i class="fas fa-lightbulb"></i>
+            Make Guess
+          </button>
+        </div>
+      </form>
+    {% endif %}
+
+    {% if not game_session.is_active %}
+      <div class="game-result">
+        {% if game_session.winner %}
+          <h3>🎉 Congratulations!</h3>
+          <p>{{ game_session.winner.username }} won the game!</p>
+        {% else %}
+          <h3>Game Over</h3>
+          <p>Better luck next time!</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </main>
+
+  {% comment %} <script>
+    // Theme toggling
+    const themeToggle = document.querySelector('.theme-toggle');
+    const htmlElement = document.documentElement;
+    
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = htmlElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      htmlElement.setAttribute('data-theme', newTheme);
+      themeToggle.innerHTML = newTheme === 'light' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    });
+
+    // Game logic
+    let attemptsLeft = 3;
+    const secretItem = "{{ game_session.secret_item }}";
+    const gameId = '{{ game_session.id }}';
+    
+    // WebSocket connection
+    const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const chatSocket = new WebSocket(
+      `${wsScheme}${window.location.host}/ws/game/${gameId}/`
+    );
+
+    chatSocket.onopen = (e) => {
+      console.log('WebSocket connection established');
+    };
+
+    chatSocket.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      
+      if (data.type === 'new_question') {
+        const questionsList = document.getElementById('questions');
+        const newQuestion = document.createElement('li');
+        newQuestion.className = 'question-item';
+        newQuestion.innerHTML = `
+          <div class="question-header">
+            <i class="fas fa-question-circle"></i>
+            <span class="username">${data.user}</span>
+          </div>
+          <p>${data.question_text}</p>
+        `;
+        questionsList.appendChild(newQuestion);
+      } else if (data.type === 'new_answer') {
+        const questionElement = document.querySelector(`[data-question-id="${data.question_id}"]`);
+        if (questionElement) {
+          questionElement.innerHTML += `<p><em>Answer: ${data.answer}</em></p>`;
+        }
+      }
+    };
+
+    // Form submissions
+    const questionForm = document.getElementById('question-form');
+    if (questionForm) {
+      questionForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const questionInput = document.getElementById('question-input');
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Send via both WebSocket and HTTP
+        chatSocket.send(JSON.stringify({
+          type: 'ask_question',
+          question_text: questionInput.value,
+          user: '{{ user.username }}'
+        }));
+
+        // Also send via HTTP POST
+        fetch('/game/{{ game_session.id }}/ask_question/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            question_text: questionInput.value
+          })
+        }).then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        }).then(data => {
+          console.log('Question submitted successfully:', data);
+          questionInput.value = '';
+        }).catch(error => {
+          console.error('Error submitting question:', error);
+          alert('There was an error submitting your question. Please try again.');
+        });
+      });
+    }
+
+    const guessForm = document.getElementById('guess-form');
+    if (guessForm) {
+      guessForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const guessInput = document.getElementById('guess-input');
+        const guess = guessInput.value.toLowerCase();
+
+        if (guess === secretItem.toLowerCase()) {
+          chatSocket.send(JSON.stringify({
+            type: 'game_over',
+            result: 'win'
+          }));
+          alert('Congratulations! You guessed correctly!');
+          window.location.reload();
+        } else {
+          attemptsLeft--;
+          if (attemptsLeft <= 0) {
+            chatSocket.send(JSON.stringify({
+              type: 'game_over',
+              result: 'lose'
+            }));
+            alert(`Game Over! The correct answer was: ${secretItem}`);
+            window.location.reload();
+          } else {
+            alert(`Wrong guess! ${attemptsLeft} attempts remaining.`);
+          }
+        }
+        guessInput.value = '';
+      });
+    }
+
+    // Cleanup
+    window.addEventListener('beforeunload', () => {
+      chatSocket.close();
+    });
+  </script> {% endcomment %}
+  <script>
+    // Theme toggling
+    const themeToggle = document.querySelector('.theme-toggle');
+    const htmlElement = document.documentElement;
+    
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = htmlElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      htmlElement.setAttribute('data-theme', newTheme);
+      themeToggle.innerHTML = newTheme === 'light' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    });
+    
+    // Game logic
+    let attemptsLeft = 3;
+    const secretItem = "{{ game_session.secret_item }}";
+    const gameId = '{{ game_session.id }}';
+    const currentUser = '{{ user.username }}';
+    const isGameCreator = '{{ game_session.created_by.username }}' === currentUser;
+    
+    // WebSocket connection
+    const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const chatSocket = new WebSocket(
+      `${wsScheme}${window.location.host}/ws/game/${gameId}/`
+    );
+    
+    chatSocket.onopen = (e) => {
+      console.log('WebSocket connection established');
+    };
+    
+    chatSocket.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      
+      if (data.type === 'new_question') {
+        const questionsList = document.getElementById('questions');
+        const newQuestion = document.createElement('li');
+        newQuestion.className = 'question-item';
+        // Only show questions to the game creator and the user who asked
+        if (isGameCreator || data.user === currentUser) {
+          newQuestion.innerHTML = `
+            <div class="question-header">
+              <i class="fas fa-question-circle"></i>
+              <span class="username">${data.user}</span>
+            </div>
+            <p>${data.question_text}</p>
+          `;
+          questionsList.appendChild(newQuestion);
+        }
+      } else if (data.type === 'new_answer') {
+        const questionElement = document.querySelector(`[data-question-id="${data.question_id}"]`);
+        // Only show answers to the game creator and the user who asked the question
+        if (questionElement && (isGameCreator || data.question_user === currentUser)) {
+          questionElement.innerHTML += `<p><em>Answer: ${data.answer}</em></p>`;
+        }
+      }
+    };
+    
+    // Form submissions for questions
+    // Form submissions for questions
+const questionForm = document.getElementById('question-form');
+if (questionForm) {
+    questionForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const questionInput = document.getElementById('question-input');
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Send the question via WebSocket to other users
+        chatSocket.send(JSON.stringify({
+            type: 'ask_question',
+            question_text: questionInput.value,
+            user: currentUser
+        }));
+
+        // Send the question to the server to store it in the database
+        fetch(`/game/{{ game_session.id }}/ask_question/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                question_text: questionInput.value,
+                user: currentUser,
+                game_id: gameId
+            })
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
+            return response.json();
+        }).then(data => {
+            console.log('Question submitted successfully:', data);
+            questionInput.value = ''; // Clear the input field
+        }).catch(error => {
+            console.error('Error submitting question:', error);
+            alert('There was an error submitting your question. Please try again.');
+        });
+    });
+}
+
+    
+    const guessForm = document.getElementById('guess-form');
+    if (guessForm) {
+      guessForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const guessInput = document.getElementById('guess-input');
+        const guess = guessInput.value.toLowerCase();
+    
+        if (guess === secretItem.toLowerCase()) {
+          chatSocket.send(JSON.stringify({
+            type: 'game_over',
+            result: 'win',
+            user: currentUser
+          }));
+          alert('Congratulations! You guessed correctly!');
+          window.location.reload();
+        } else {
+          attemptsLeft--;
+          if (attemptsLeft <= 0) {
+            chatSocket.send(JSON.stringify({
+              type: 'game_over',
+              result: 'lose',
+              user: currentUser
+            }));
+            alert(`Game Over! The correct answer was: ${secretItem}`);
+            window.location.reload();
+          } else {
+            alert(`Wrong guess! ${attemptsLeft} attempts remaining.`);
+          }
+        }
+        guessInput.value = '';
+      });
+    }
+    
+    // Cleanup
+    window.addEventListener('beforeunload', () => {
+      chatSocket.close();
+    });
+  </script>
+  
+  
+</body>
+
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Editor - Active Games</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+
+            --bg-primary-light: #f5f7fa;
+            --bg-secondary-light: #ffffff;
+            --text-primary-light: #2d3436;
+            --text-secondary-light: #636e72;
+            --accent-light: #6c5ce7;
+            --border-light: #e0e0e0;
+            --hover-light: #f0f0f0;
+            
+            --bg-primary-dark: #1a1b26;
+            --bg-secondary-dark: #24283b;
+            --text-primary-dark: #a9b1d6;
+            --text-secondary-dark: #787c99;
+            --accent-dark: #7aa2f7;
+            --border-dark: #414868;
+            --hover-dark: #2f334d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Fira Code', monospace;
+        }
+
+        body {
+            min-height: 100vh;
+            padding: 2rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body[data-theme="light"] {
+            background: var(--bg-primary-light);
+            color: var(--text-primary-light);
+        }
+
+        body[data-theme="dark"] {
+            background: var(--bg-primary-dark);
+            color: var(--text-primary-dark);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1.5rem;
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(15deg);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .games-list {
+            list-style: none;
+            display: grid;
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        .game-card {
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        body[data-theme="light"] .game-card {
+            background: var(--bg-secondary-light);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        body[data-theme="dark"] .game-card {
+            background: var(--bg-secondary-dark);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-link {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1.5rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .game-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body[data-theme="light"] .game-icon {
+            background: linear-gradient(135deg, #6c5ce7, #a363d9);
+        }
+
+        body[data-theme="dark"] .game-icon {
+            background: linear-gradient(135deg, #7aa2f7, #2ac3de);
+        }
+
+        .game-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .game-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        body[data-theme="light"] .game-name {
+            color: var(--text-primary-light);
+        }
+
+        body[data-theme="dark"] .game-name {
+            color: var(--text-primary-dark);
+        }
+
+        .game-id, .game-creator, .game-timestamp {
+            font-size: 0.9rem;
+        }
+
+        body[data-theme="light"] .game-id,
+        body[data-theme="light"] .game-creator,
+        body[data-theme="light"] .game-timestamp {
+            color: var(--text-secondary-light);
+        }
+
+        body[data-theme="dark"] .game-id,
+        body[data-theme="dark"] .game-creator,
+        body[data-theme="dark"] .game-timestamp {
+            color: var(--text-secondary-dark);
+        }
+
+        .game-time {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body[data-theme="light"] .game-time {
+            color: var(--accent-light);
+        }
+
+        body[data-theme="dark"] .game-time {
+            color: var(--accent-dark);
+        }
+
+        .no-games {
+            text-align: center;
+            padding: 3rem;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        body[data-theme="light"] .no-games {
+            background: var(--bg-secondary-light);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        body[data-theme="dark"] .no-games {
+            background: var(--bg-secondary-dark);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .no-games i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        body[data-theme="light"] .no-games i {
+            color: var(--text-secondary-light);
+        }
+
+        body[data-theme="dark"] .no-games i {
+            color: var(--text-secondary-dark);
+        }
+
+        .no-games p {
+            font-size: 1.2rem;
+        }
+
+
+        .game-link:focus {
+            outline: 3px solid var(--accent-light);
+            outline-offset: 3px;
+        }
+
+        body[data-theme="dark"] .game-link:focus {
+            outline-color: var(--accent-dark);
+        }
+
+        .game-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+        }
+
+        body[data-theme="light"] .game-card:hover {
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        body[data-theme="dark"] .game-card:hover {
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+        }
+
+
+        @media (max-width: 768px) {
+            .game-link {
+                grid-template-columns: auto 1fr;
+            }
+
+            .game-time {
+                grid-column: span 2;
+                justify-content: flex-start;
+                margin-top: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .game-card {
+                padding: 1rem;
+            }
+        }
+
+
+        @media (prefers-contrast: high) {
+            :root {
+                --accent-light: #0000ff;
+                --accent-dark: #00ff00;
+                --text-primary-light: #000000;
+                --text-primary-dark: #ffffff;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <button class="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+    </button>
+    <div class="container">
+        <h1>Active Game Sessions</h1>
+        {% if active_game_sessions %}
+            <ul class="games-list" role="list">
+                {% for game in active_game_sessions %}
+                    <li class="game-card">
+                        <a href="{% url 'game_detail' game.id %}" class="game-link" aria-label="Game {{ game.secret_item }} details">
+                            <div class="game-icon" aria-hidden="true">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <div class="game-info">
+                                <div class="game-name">{{ game.secret_item }}</div>
+                                <div class="game-id">ID: {{ game.id }}</div>
+                                <div class="game-creator">Created by: {{ game.thinker.username }}</div>
+                                <div class="game-timestamp">Created on: {{ game.created_at|date:"F j, Y, g:i a" }}</div>
+                            </div>
+                            <div class="game-time">
+                                <i class="far fa-clock" aria-hidden="true"></i>
+                                {{ game.start_time }}
+                            </div>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="no-games" role="alert">
+                <i class="fas fa-ghost" aria-hidden="true"></i>
+                <p>No active game sessions available at the moment.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.querySelector('.theme-toggle i');
+            
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.classList.remove('fa-moon');
+                themeToggle.classList.add('fa-sun');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.classList.remove('fa-sun');
+                themeToggle.classList.add('fa-moon');
+            }
+        }
+
+      
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.setAttribute('data-theme', 'dark');
+            document.querySelector('.theme-toggle i').classList.replace('fa-moon', 'fa-sun');
+        }
+    </script>
+</body>
+</html>
