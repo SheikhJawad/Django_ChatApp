@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-<<<<<<< HEAD
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Editor - Active Games</title>
+    <title>C Active Games</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-
+            /* Light Theme Variables */
             --bg-primary-light: #f5f7fa;
             --bg-secondary-light: #ffffff;
             --text-primary-light: #2d3436;
@@ -18,6 +17,7 @@
             --border-light: #e0e0e0;
             --hover-light: #f0f0f0;
             
+            /* Dark Theme Variables */
             --bg-primary-dark: #1a1b26;
             --bg-secondary-dark: #24283b;
             --text-primary-dark: #a9b1d6;
@@ -217,7 +217,7 @@
             font-size: 1.2rem;
         }
 
-
+        /* Accessibility Improvements */
         .game-link:focus {
             outline: 3px solid var(--accent-light);
             outline-offset: 3px;
@@ -227,6 +227,7 @@
             outline-color: var(--accent-dark);
         }
 
+        /* Animation for card hover */
         .game-card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
@@ -243,7 +244,7 @@
             box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
         }
 
-
+        /* Responsive Design */
         @media (max-width: 768px) {
             .game-link {
                 grid-template-columns: auto 1fr;
@@ -257,59 +258,6 @@
         }
 
         @media (max-width: 480px) {
-=======
-    <title>Active Games</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 0.5rem;
-        }
-
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        li {
-            background-color: white;
-            margin: 1rem 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        li:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-
-        a {
-            display: block;
-            padding: 1rem 1.5rem;
-            color: #2980b9;
-            text-decoration: none;
-            font-size: 1.1rem;
-        }
-
-        a:hover {
-            color: #3498db;
-        }
-
-        @media (max-width: 600px) {
->>>>>>> 0ef6c67a928cfe97da6d69f3cb98281531bc0dcd
             body {
                 padding: 1rem;
             }
@@ -317,14 +265,13 @@
             h1 {
                 font-size: 2rem;
             }
-<<<<<<< HEAD
 
             .game-card {
                 padding: 1rem;
             }
         }
 
-
+        /* High Contrast Mode */
         @media (prefers-contrast: high) {
             :root {
                 --accent-light: #0000ff;
@@ -393,19 +340,5 @@
             document.querySelector('.theme-toggle i').classList.replace('fa-moon', 'fa-sun');
         }
     </script>
-=======
-        }
-    </style>
-</head>
-<body>
-    <h1>Active Games</h1>
-    <ul>
-        {% for game in active_game_sessions %}
-            <li>
-                <a href="{% url 'game_detail' game.id %}">Game by {{ game.thinker.username }}</a>
-            </li>
-        {% endfor %}
-    </ul>
->>>>>>> 0ef6c67a928cfe97da6d69f3cb98281531bc0dcd
 </body>
 </html>
