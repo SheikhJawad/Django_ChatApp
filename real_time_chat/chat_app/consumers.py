@@ -370,69 +370,6 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
 
 
 
-# import json
-# import logging
-# from channels.generic.websocket import AsyncWebsocketConsumer
-
-
-# logger = logging.getLogger(__name__)
-
-# class GameConsumer(AsyncWebsocketConsumer):
-#     async def connect(self):
-#         self.game_id = self.scope['url_route']['kwargs']['game_id']
-#         self.game_group_name = f'game_{self.game_id}'
-
-#         logger.debug(f"Connecting to game group: {self.game_group_name}")
-        
-#         # Join the game group
-#         await self.channel_layer.group_add(
-#             self.game_group_name,
-#             self.channel_name
-#         )
-
-#         logger.debug(f"WebSocket connected to game group: {self.game_group_name}")
-
-#         await self.accept()
-
-#     async def disconnect(self, close_code):
-#         logger.debug(f"Disconnecting from game group: {self.game_group_name}, Close Code: {close_code}")
-        
-#         # Leave the game group
-#         await self.channel_layer.group_discard(
-#             self.game_group_name,
-#             self.channel_name
-#         )
-
-#     async def receive(self, text_data):
-#         logger.debug(f"Received data: {text_data}")
-
-#         data = json.loads(text_data)
-#         question_text = data.get('question_text', '')
-#         user = self.scope['user'].username
-        
-#         logger.debug(f"Received question from {user}: {question_text}")
-
-#         # Send the question to the game group
-#         await self.channel_layer.group_send(
-#             self.game_group_name,
-#             {
-#                 'type': 'game_question',
-#                 'user': user,
-#                 'question_text': question_text,
-#             }
-#         )
-
-#     async def game_question(self, event):
-#         logger.debug(f"Sending game question: {event}")
-
-#         user = event['user']
-#         question_text = event['question_text']
-        
-#         # Send question to WebSocket
-#         await self.send(text_data=json.dumps({
-#             'user': user,
-#             'question_text': question_text,
-#         }))
 
 import json
 import logging
