@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'channels',
     'rest_framework',
     'chat_app',
-
+'widget_tweaks',
     'rest_framework_simplejwt',
 ]
 REST_FRAMEWORK = {
